@@ -22,7 +22,8 @@ type ApplyCtx = {
   issues: ApplyIssue[];
   driveSteps: DriveStep[];
   error: string;
-  open: (url: string, opts?: { prefill?: boolean; company?: string }) => Promise<void>;
+  approved: boolean;
+  open: (url: string, opts?: { prefill?: boolean; company?: string; approved?: boolean }) => Promise<void>;
   prefill: () => Promise<void>;
   setAnswer: (idOrLabel: string, value: string) => void;
   fill: () => Promise<void>;
@@ -60,6 +61,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
   const [issues, setIssues] = useState<ApplyIssue[]>([]);
   const [driveSteps, setDriveSteps] = useState<DriveStep[]>([]);
   const [error, setError] = useState("");
+  const [approved, setApproved] = useState(false);
   const sessionId = useRef<string | null>(null);
   const companyRef = useRef<string>("");
   const fieldsRef = useRef<ApplyField[]>([]);
@@ -125,7 +127,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const open = useCallback(async (u: string, opts?: { prefill?: boolean; company?: string }) => {
+  const open = useCallback(async (u: string, opts?: { prefill?: boolean; company?: string; approved?: boolean }) => {
     setStatus("opening");
     setError("");
     setFields([]);
@@ -135,6 +137,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
     setShots([]);
     setIssues([]);
     setDriveSteps([]);
+    setApproved(!!opts?.approved);
     setUrl(u);
     setCompany(opts?.company ?? "");
     companyRef.current = opts?.company ?? "";
@@ -147,10 +150,19 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
         setStatus("error");
         return;
       }
+      const block = Array.isArray(d.issues)
+        ? (d.issues as ApplyIssue[]).find((i) => i.level === "block" && (i.code === "auth-required" || i.code === "login-wall"))
+        : null;
+      if (block && !opts?.approved) {
+        setIssues(d.issues ?? []);
+        setError("This job requires sign-in. Open the page in your browser, log in, then mark the job approved and re-open it to prefill.");
+        setStatus("error");
+        return;
+      }
       sessionId.current = d.id;
       setTitle(d.title);
       setShots(d.shots ?? []);
-      pendingPrefill.current = !!opts?.prefill;
+      pendingPrefill.current = !!opts?.prefill && !!opts?.approved;
       if (d.needsDrive) {
         // The form is behind navigation → the agent drives to reach it, streamed.
         setStatus("driving");
@@ -168,6 +180,10 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
 
   const prefill = useCallback(async () => {
     if (!sessionId.current) return;
+    if (!approved) {
+      setError("Approve the job first, then prefill.");
+      return;
+    }
     if (!cliId()) {
       setError("Configure a CLI in Config first, then pre-fill from your CV.");
       return;
@@ -232,7 +248,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
       setError(`Couldn't pre-fill from your CV: ${e instanceof Error ? e.message : "stream error"}. See diagnostics.`);
       setStatus("ready");
     }
-  }, []);
+  }, [approved]);
 
   // Auto-prefill exactly once after the fields are ready.
   useEffect(() => {
@@ -254,6 +270,10 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
 
   const fill = useCallback(async () => {
     if (!sessionId.current) return;
+    if (!approved) {
+      setError("Approve the job first, then fill the form.");
+      return;
+    }
     setStatus("filling");
     setSteps([]);
     try {
@@ -286,13 +306,17 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
       setError("Fill failed.");
       setStatus("error");
     }
-  }, [answers, fields]);
+  }, [answers, fields, approved]);
 
   // FULL-AGENT FILL — the agent fills the real form turn-by-turn from the verified
   // answers, streamed (drive panel), never submits, then hands off. Used as the
   // escalation when deterministic fill fails, or on demand.
   const agentFill = useCallback(async () => {
     if (!sessionId.current) return;
+    if (!approved) {
+      setError("Approve the job first, then let the AI drive the form.");
+      return;
+    }
     const fs = fieldsRef.current;
     const a = answersRef.current;
     const ans = fs.filter((f) => f.type !== "file" && (a[f.id] || "").trim()).map((f) => ({ label: f.label || f.id, value: a[f.id] }));
@@ -338,7 +362,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
       setError(`The agent couldn't fill the form: ${e instanceof Error ? e.message : "stream error"}.`);
       setStatus("error");
     }
-  }, []);
+  }, [approved]);
   const agentFillRef = useRef(agentFill);
   agentFillRef.current = agentFill;
 
@@ -363,11 +387,12 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
     setIssues([]);
     setDriveSteps([]);
     setError("");
+    setApproved(false);
   }, []);
 
   const value = useMemo(
-    () => ({ status, url, title, company, fields, answers, meta, steps, shots, prefillLog, issues, driveSteps, error, open, prefill, setAnswer, fill, agentFill, reset }),
-    [status, url, title, company, fields, answers, meta, steps, shots, prefillLog, issues, driveSteps, error, open, prefill, setAnswer, fill, agentFill, reset],
+    () => ({ status, url, title, company, fields, answers, meta, steps, shots, prefillLog, issues, driveSteps, error, approved, open, prefill, setAnswer, fill, agentFill, reset }),
+    [status, url, title, company, fields, answers, meta, steps, shots, prefillLog, issues, driveSteps, error, approved, open, prefill, setAnswer, fill, agentFill, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

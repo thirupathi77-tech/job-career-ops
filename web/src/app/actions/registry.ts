@@ -41,7 +41,7 @@ export type ActionCtx = {
   rememberFact: (fact: string) => void;
   writeStatus: (n: string, status: string) => void; // UPDATE-only writeback via /api/status
   setApplyField: (idOrLabel: string, value: string) => void; // edit an apply-proxy answer
-  startApply: (url: string) => void; // open the apply form-proxy for a posting URL
+  startApply: (url: string, opts?: { approved?: boolean; prefill?: boolean }) => void; // open the apply form-proxy for a posting URL
   applyExplore?: (patch: Record<string, unknown>, opts?: { merge?: boolean; run?: boolean }) => void; // build a FREE discovery search
   writeProfile?: (patch: Record<string, unknown>) => void; // merge-safe config/profile.yml write
   writePortals?: (roles: string[], location?: string[]) => void; // merge-safe portals.yml title_filter write
@@ -93,7 +93,7 @@ function isAllowedPath(p: string): boolean {
   if (/^(https?:)?\/\//i.test(p)) return false;
   const path = p.split(/[?#]/)[0];
   if (path === "/") return true;
-  return /^\/(explore|pipeline|portals|analytics|cv|config|apply|jobs)(\/[^/]+)?$/.test(path);
+  return /^\/(explore|pipeline|portals|analytics|cv|config|apply|prefills|jobs)(\/[^/]+)?$/.test(path);
 }
 
 function genBatchId(): string {
@@ -276,7 +276,8 @@ const ACTIONS: Record<string, ActionDef> = {
     run: (raw, ctx) => {
       const url = raw.url;
       if (!isStr(url) || !/^https?:\/\//i.test(url)) return { status: "ignored", note: "need an application form URL" };
-      ctx.startApply(url);
+      const approved = raw.approved === true;
+      ctx.startApply(url, approved ? { approved: true, prefill: true } : undefined);
       return { status: "done", note: "Opening the application form…" };
     },
   },

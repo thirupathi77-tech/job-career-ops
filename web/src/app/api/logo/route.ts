@@ -6,14 +6,9 @@ import { careerOpsRoot } from "@/lib/career-ops";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Localhost logo proxy + on-disk cache, FOREVER per key. Honors local-first: the
-// browser never talks to Google directly. Accepts `?domain=` (exact) OR
-// `?company=` (a name → we guess a handful of likely domains and resolve once).
-// Each key is fetched at most once ever, then served from .career-ops-web/logo-cache
-// (a hit, or an empty sentinel for a known miss). On any miss → 404 so the
-// client's <img onError> falls back to the offline monogram. Because the cache is
-// keyed by company, once a company's logo resolves it's instant for that card AND
-// every other card (this search or any future one), forever.
+// Localhost logo proxy + on-disk cache, FOREVER per key. To stay offline-safe we
+// do not reach out to third-party favicon services. Instead, each company gets a
+// deterministic generated monogram on first request, then that PNG is cached.
 
 const DOMAIN_RE = /^[a-z0-9.-]{1,253}\.[a-z]{2,}$/i;
 
@@ -21,35 +16,31 @@ function cacheDir(): string {
   return path.join(careerOpsRoot(), ".career-ops-web", "logo-cache");
 }
 
-/** Plausible domains for a company name, cheapest/likeliest first. */
-function companyDomains(company: string): string[] {
-  const paren = company.match(/\(([A-Za-z0-9]{2,12})\)/)?.[1]; // "… (5WPR)"
-  // [^()] (not [^)]) keeps the match unambiguous — no polynomial backtracking on
-  // adversarial inputs full of unclosed parens (CodeQL js/polynomial-redos).
-  const base = company.replace(/\([^()]*\)/g, "").trim();
-  const compact = base.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
-  const firstWord = base.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]/g, "");
-  const stems = [...new Set([compact, paren?.toLowerCase(), firstWord].filter((s): s is string => !!s && s.length >= 2 && s.length <= 30))];
-  const out: string[] = [];
-  for (const t of [".com", ".ai", ".io", ".co"]) for (const s of stems) out.push(s + t);
-  return out.slice(0, 5);
+function initials(input: string): string {
+  const clean = input.replace(/[^A-Za-z0-9]+/g, " ").trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
 }
 
-/** Fetch a real favicon for one domain (Google's tokenless service). Returns the
- *  bytes, or null for a miss (Google serves a tiny globe placeholder for misses). */
-async function fetchFavicon(domain: string): Promise<ArrayBuffer | null> {
-  try {
-    const res = await fetch(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`, {
-      headers: { Accept: "image/*" },
-      signal: AbortSignal.timeout(3500),
-      redirect: "follow",
-    });
-    if (!res.ok) return null;
-    const ab = await res.arrayBuffer();
-    return ab.byteLength > 220 ? ab : null;
-  } catch {
-    return null;
-  }
+function colorFor(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  const hue = hash % 360;
+  return `hsl(${hue} 72% 46%)`;
+}
+
+function svgMonogram(label: string, key: string): Buffer {
+  const bg = colorFor(key);
+  const fg = "#ffffff";
+  const text = initials(label);
+  const safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="${safe}">
+    <rect width="64" height="64" rx="16" fill="${bg}"/>
+    <text x="32" y="39" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="${fg}">${safe}</text>
+  </svg>`;
+  return Buffer.from(svg);
 }
 
 export async function GET(req: NextRequest) {
@@ -58,51 +49,45 @@ export async function GET(req: NextRequest) {
   const company = (sp.get("company") ?? "").trim();
 
   let key: string;
-  let candidates: string[];
+  let label: string;
   if (domain) {
     if (!DOMAIN_RE.test(domain) || domain.includes("..")) return new Response("bad domain", { status: 400 });
     key = domain.replace(/[^a-z0-9.-]/g, "_");
-    candidates = [domain];
+    label = domain;
   } else if (company) {
     const slug = company.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 40);
     if (!slug) return new Response("bad company", { status: 400 });
     key = `co_${slug}`;
-    candidates = companyDomains(company);
-    if (candidates.length === 0) return new Response("no logo", { status: 404 });
+    label = company;
   } else {
     return new Response("need domain or company", { status: 400 });
   }
 
   // `key` is already sanitized above, but enforce containment anyway: a cache
   // path must never resolve outside the cache dir (defense in depth).
-  const file = path.resolve(cacheDir(), `${key}.png`);
+  const file = path.resolve(cacheDir(), `${key}.svg`);
   if (!file.startsWith(path.resolve(cacheDir()) + path.sep)) return new Response("bad key", { status: 400 });
 
   // 1) serve from disk cache forever (hit, or empty sentinel = known miss)
   try {
     const buf = await fs.readFile(file);
     if (buf.byteLength > 0) {
-      return new Response(new Uint8Array(buf), { status: 200, headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=604800" } });
+      return new Response(new Uint8Array(buf), { status: 200, headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=604800" } });
     }
     return new Response("no logo", { status: 404 });
   } catch {
     /* not cached yet → resolve below */
   }
 
-  // 2) resolve once: first candidate domain that yields a real favicon wins
-  let bytes: ArrayBuffer | null = null;
-  for (const d of candidates) {
-    bytes = await fetchFavicon(d);
-    if (bytes) break;
-  }
+  // 2) generate once: deterministic monogram, then cache forever
+  const bytes = svgMonogram(label, key);
 
   try {
     await fs.mkdir(cacheDir(), { recursive: true });
-    await fs.writeFile(file, bytes ? Buffer.from(bytes) : new Uint8Array(0)); // sentinel on miss → never refetch
+    await fs.writeFile(file, bytes);
   } catch {
     /* best-effort */
   }
 
-  if (!bytes) return new Response("no logo", { status: 404 });
-  return new Response(bytes, { status: 200, headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=604800" } });
+  return new Response(new Uint8Array(bytes), { status: 200, headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=604800" } });
 }

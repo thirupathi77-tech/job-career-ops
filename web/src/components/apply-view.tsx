@@ -30,6 +30,7 @@ const STYLE = `
 export function ApplyView() {
   const a = useApply();
   const [input, setInput] = useState("");
+  const [approveJob, setApproveJob] = useState(false);
 
   if (a.status === "idle" || a.status === "error") {
     return (
@@ -43,12 +44,24 @@ export function ApplyView() {
             className="min-w-0 flex-1 bg-transparent py-1.5 text-sm outline-none placeholder:text-faint"
           />
           <button
-            onClick={() => a.open(input.trim())}
+            onClick={() => a.open(input.trim(), { approved: approveJob, prefill: approveJob })}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200"
           >
             <Wand2 className="size-4" /> Read form
           </button>
         </div>
+        <label className="mt-3 flex max-w-2xl items-start gap-2 rounded-xl border border-border bg-surface/50 px-4 py-3 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={approveJob}
+            onChange={(e) => setApproveJob(e.target.checked)}
+            className="mt-1 size-4 rounded border-border"
+          />
+          <span>
+            Approve this job first. When enabled, the app will prefill required details only after it reads the form and
+            confirms the page is not a sign-in wall.
+          </span>
+        </label>
         {a.error && (
           <div className="mt-4 max-w-2xl rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3.5">
             <div className="flex items-start gap-2.5">
@@ -130,11 +143,11 @@ export function ApplyView() {
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button
               onClick={a.prefill}
-              disabled={prefilling || filling}
+              disabled={prefilling || filling || !a.approved}
               className="inline-flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand-soft px-3.5 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand/15 disabled:opacity-50"
             >
               {prefilling ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-              {prefilling ? "Drafting from your CV…" : "Pre-fill from my CV"}
+              {prefilling ? "Drafting from your CV…" : a.approved ? "Pre-fill from my CV" : "Approve job to pre-fill"}
             </button>
             <span className="text-xs text-muted">…or ask the corner assistant to write/revise any answer.</span>
           </div>
@@ -179,15 +192,15 @@ export function ApplyView() {
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               onClick={a.fill}
-              disabled={filling || prefilling}
+              disabled={filling || prefilling || !a.approved}
               className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-lg shadow-brand/25 transition-all hover:bg-brand-200 hover:shadow-brand/40 disabled:opacity-50"
             >
               {filling ? <Loader2 className="size-4 animate-spin" /> : <ArrowUpRight className="size-4" />}
-              {filling ? "Filling the real form…" : "Fill the real form & review"}
+              {filling ? "Filling the real form…" : a.approved ? "Fill the real form & review" : "Approve job to fill"}
             </button>
             <button
               onClick={a.agentFill}
-              disabled={filling || prefilling}
+              disabled={filling || prefilling || !a.approved}
               title="Let the AI drive the real form and fill it field-by-field (for tricky / multi-step forms). It never submits."
               className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-50"
             >
@@ -226,6 +239,12 @@ export function ApplyView() {
                 <span className="font-medium text-emerald-700 dark:text-emerald-400">The real form is now in front, pre-filled.</span>{" "}
                 <span className="text-muted">Review it and click Submit yourself — VApplyIQ AI never submits for you.</span>
               </div>
+            </div>
+          )}
+          {!a.approved && (
+            <div className="co-rise mt-4 rounded-xl border border-dashed border-border bg-surface/50 px-4 py-3 text-sm text-muted">
+              Approve the job first to unlock prefill and fill. This keeps sign-in-gated or unreviewed jobs from getting
+              any personal data until you explicitly choose them.
             </div>
           )}
         </div>

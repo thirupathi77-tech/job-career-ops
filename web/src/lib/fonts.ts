@@ -1,28 +1,17 @@
-import { Inter, Instrument_Serif } from "next/font/google";
+type FontLike = {
+  className: string;
+  variable: string;
+};
 
-// Body / UI — Inter, same as the career-ops-docs home (next/font/google,
-// self-hosted: no CLS, GDPR-safe).
-export const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+function makeFont(variable: string): FontLike {
+  return {
+    className: variable === "--font-inter" ? "font-inter" : variable === "--font-instrument-serif" ? "font-instrument-serif" : "font-instrument-serif-italic",
+    variable,
+  };
+}
 
-// Editorial display — Instrument Serif. The home uses it for the hero display
-// copy and section headings (the "career-ops" editorial voice). Regular +
-// italic (pull-quotes) mirror the docs lib/fonts.ts.
-export const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: "normal",
-  variable: "--font-instrument-serif",
-  display: "swap",
-});
-
-export const instrumentSerifItalic = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: "italic",
-  variable: "--font-instrument-serif-italic",
-  display: "swap",
-});
+// Offline-safe font tokens. The app keeps the same semantic hooks, but relies on
+// local/system stacks so production builds never need network access.
+export const inter = makeFont("--font-inter");
+export const instrumentSerif = makeFont("--font-instrument-serif");
+export const instrumentSerifItalic = makeFont("--font-instrument-serif-italic");

@@ -6,11 +6,11 @@ import { cn } from "@/lib/cn";
 
 const CONFIG_KEY = "career-ops:config";
 
-// A small company mark: the real favicon on a white tile when logos are enabled
-// and resolvable, otherwise a deterministic colored monogram. The monogram is
-// the always-rendered base layer (SSR-safe + offline floor); the logo fades in
-// on top once loaded, and any failure (404/offline/disabled) just leaves the
-// monogram showing. See lib/company.ts + /api/logo.
+// A small company mark: a deterministic monogram when logos are disabled or
+// unavailable, with the same monogram also used as the always-rendered base
+// layer (SSR-safe + offline floor). The generated asset can fade in on top
+// when enabled, and any failure just leaves the monogram showing. See
+// lib/company.ts + /api/logo.
 export function CompanyLogo({
   name,
   size = 20,

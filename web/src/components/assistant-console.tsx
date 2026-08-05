@@ -268,9 +268,9 @@ export function AssistantConsole() {
           .catch(() => {});
       },
       setApplyField: (idOrLabel, value) => applyRef.current.setAnswer(idOrLabel, value),
-      startApply: (u) => {
+      startApply: (u, opts) => {
         router.push("/apply");
-        setTimeout(() => applyRef.current.open(u), 60);
+        setTimeout(() => applyRef.current.open(u, opts), 60);
       },
       applyExplore: (patch, opts) => exploreRef.current.applyPatch(patch, opts),
       writeProfile: (patch) => {

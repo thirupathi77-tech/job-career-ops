@@ -23,6 +23,16 @@ claude   # or codex / qwen / opencode / agy / grok
 
 **On first launch, career-ops walks you through setup by chatting** — it asks for your CV, your details (name, target roles, salary), and sets up the job scanner with pre-configured companies. Nothing to edit by hand: just answer its questions. Then paste a job offer URL or description and it evaluates it, writes a report, generates a tailored PDF, and tracks it.
 
+### Web app
+
+If you prefer a browser-first workflow, start the local web app from the repo root:
+
+```bash
+npm run web:dev
+```
+
+Then open http://localhost:3000. The web UI can ingest your CV, save your profile, prefill applications, and browse your pipeline without manual file editing for the common setup flow.
+
 If you are using Codex, start the interactive session with `codex`. Slash commands are not guaranteed in Codex, so use the same mode names in a prompt if `/career-ops` is unavailable:
 
 ```text

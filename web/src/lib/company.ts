@@ -1,12 +1,10 @@
 // Company identity helpers — PURE, client-safe (no node imports).
 //
-// The job logos look "pro" when the real brand mark sits next to the name. But
-// the posting URL is ALWAYS a job board (greenhouse/lever/ashby/workday/linkedin),
+// The posting URL is ALWAYS a job board (greenhouse/lever/ashby/workday/linkedin),
 // so it can NEVER be used to derive the employer domain. We resolve the domain
 // from the company NAME instead: a small curated override map for the brand≠slug
-// long tail, then a slug+.com heuristic. The logo itself is fetched (and cached)
-// by the /api/logo localhost proxy; if anything fails we fall back to a
-// deterministic monogram that works fully offline with zero privacy leak.
+// long tail, then a slug+.com heuristic. The logo itself is a generated local
+// monogram served by /api/logo, so the UI stays offline-friendly and privacy-safe.
 
 /** Curated name → domain overrides for the common cases slug+.com gets wrong. */
 const DOMAIN_OVERRIDES: Record<string, string> = {
