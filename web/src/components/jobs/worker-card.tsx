@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, X, Loader2, AlertTriangle } from "lucide-react";
 import type { Job } from "@/components/jobs/job-store";
 import { cn } from "@/lib/cn";
+import { formatJobFitScore } from "@/lib/format";
 
 // Humanize raw agent tool names into what the user actually cares about, so a
 // multi-minute evaluation reads as progress instead of a cryptic tool dump (#8).
@@ -107,7 +108,7 @@ export function WorkerCard({
               tone.chip,
             )}
           >
-            {job.result!.score}
+            {formatJobFitScore(job.result!.score!)}
           </span>
         )}
         {trailing != null && (

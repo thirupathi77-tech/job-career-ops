@@ -28,17 +28,21 @@ export async function GET() {
     return Response.json({ available: true, configured: false, companies: [] });
   }
 
-  const stdout = await new Promise<string>((resolve) => {
+  const result = await new Promise<{ output: string; error: string | null }>((resolve) => {
     execFile(
       "node",
       [verifyPortals],
       { cwd: root, timeout: 110_000, maxBuffer: 4 * 1024 * 1024 },
-      (_e, out, err) => resolve((out || "") + (err || "")),
+      (error, out, err) => resolve({ output: (out || "") + (err || ""), error: error ? (err || error.message || "Portal verification failed.").trim() : null }),
     );
   });
 
+  if (result.error) {
+    return Response.json({ available: true, configured: true, companies: [], error: result.error }, { status: 502 });
+  }
+
   const companies: { name: string; status: string; detail: string }[] = [];
-  for (const line of stdout.split("\n")) {
+  for (const line of result.output.split("\n")) {
     const m = line.match(/^\s*(✅|🟡|❌|➖)\s+(.+?)\s+—\s+(.*)$/);
     if (m) companies.push({ name: m[2].trim(), status: STATUS[m[1]] ?? "unknown", detail: m[3].trim() });
   }

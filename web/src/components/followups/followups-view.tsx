@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
 import { LogDialog } from "@/components/followups/log-dialog";
 import { NextDateDialog } from "@/components/followups/next-date-dialog";
-import { scoreTone } from "@/lib/format";
+import { formatJobFitScore, scoreTone } from "@/lib/format";
 import {
   type CadenceEntry,
   type CadenceMetadata,
@@ -33,7 +33,7 @@ type UrgencyTab = (typeof URGENCY_TABS)[number];
 const COLUMNS = [
   { key: "company", label: "Company" },
   { key: "role", label: "Role" },
-  { key: "score", label: "Score" },
+  { key: "score", label: "Job Fit" },
   { key: "status", label: "Status" },
   { key: "urgency", label: "Urgency" },
   { key: "days", label: "Days since app" },
@@ -91,7 +91,10 @@ export function FollowupsView() {
 
   const refetch = useCallback(() => {
     fetch("/api/followups?full=1")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
       .then((d: CadenceResponse) => setData(d))
       .catch(() => setData({ available: false, metadata: null, entries: [] }));
   }, []);
@@ -204,6 +207,7 @@ export function FollowupsView() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            aria-label="Search follow-ups by company or role"
             placeholder="Search company or role…"
             className="w-full rounded-md border border-border bg-surface/60 py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50 focus-visible:ring-2 focus-visible:ring-brand/40"
           />
@@ -219,7 +223,9 @@ export function FollowupsView() {
           return (
             <button
               key={t}
+              type="button"
               onClick={() => setParams({ urgency: t === "ALL" ? null : t })}
+              aria-pressed={tab === t}
               className={cn(
                 "-mb-px border-b-2 px-3 py-2 text-xs font-medium transition-colors",
                 tab === t ? "border-brand text-foreground" : "border-transparent text-muted hover:text-foreground",
@@ -373,7 +379,7 @@ function FollowupRow({
         </td>
         <td className="max-w-56 truncate px-2.5 py-3 text-muted">{e.role}</td>
         <td className="px-2.5 py-3">
-          <Badge tone={scoreTone(e.score)}>{e.score || "—"}</Badge>
+          <Badge tone={scoreTone(e.score)}>{e.score ? formatJobFitScore(e.score) : "—"}</Badge>
         </td>
         <td className="px-2.5 py-3">
           <Badge tone={followupStatusTone(e.status)}>{statusLabel}</Badge>

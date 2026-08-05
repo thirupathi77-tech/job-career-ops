@@ -17,8 +17,7 @@ const STYLE = `
 .co-fb__chip{display:inline-flex;align-items:center;gap:.3rem;border-radius:999px;padding:.2rem .5rem .2rem .6rem;font-size:12.5px;line-height:1.2;border:1px solid transparent}
 .co-fb__chip button{display:inline-flex;opacity:.6;transition:opacity .15s}
 .co-fb__chip button:hover{opacity:1}
-.co-fb__chip.inc{color:hsl(26 78% 42%);background:hsl(26 73% 51% / .11);border-color:hsl(26 73% 51% / .26)}
-html.dark .co-fb__chip.inc{color:hsl(26 86% 70%);background:hsl(26 80% 55% / .14);border-color:hsl(26 80% 55% / .28)}
+.co-fb__chip.inc{color:var(--brand-text);background:var(--color-brand-soft);border-color:color-mix(in srgb,var(--color-brand) 30%,transparent)}
 .co-fb__field{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;min-height:2.6rem;padding:.45rem .55rem;border-radius:.7rem}
 .co-fb__field input{flex:1;min-width:7rem;background:transparent;border:none;outline:none;font-size:13.5px;color:inherit}
 .co-fb__field input::placeholder{color:var(--co-faint,hsl(0 0% 60%))}
@@ -145,9 +144,11 @@ export function FilterBuilder({
                 key={r.days}
                 type="button"
                 onClick={() => set({ sinceDays: r.days })}
+                aria-pressed={filters.sinceDays === r.days}
+                aria-label={`Posted within ${r.label}`}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium transition-colors max-sm:min-h-[44px]",
-                  filters.sinceDays === r.days ? "bg-brand-soft text-brand" : "text-muted hover:text-foreground",
+                  filters.sinceDays === r.days ? "bg-brand text-brand-foreground shadow-sm" : "text-muted hover:bg-surface-hover hover:text-foreground",
                 )}
               >
                 {r.label}
@@ -166,6 +167,7 @@ export function FilterBuilder({
                   key={a}
                   type="button"
                   onClick={() => toggleAts(a)}
+                  aria-pressed={on}
                   className={cn(
                     "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors max-sm:min-h-[44px]",
                     on ? "border-brand/40 bg-brand-soft text-brand" : "border-border text-muted hover:text-foreground",

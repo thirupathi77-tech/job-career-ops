@@ -27,11 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ExploreProvider>
       <MobileNav />
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface/30 p-4 md:flex">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface p-4 md:flex">
           <Link href="/" className="mb-8 flex items-center gap-2.5 px-1">
             <CoMark size={32} />
-            <span className={`${instrumentSerif.className} relative -top-px text-2xl font-normal tracking-tight text-landing`}>
-              career-ops
+            <span className="relative -top-px text-xl font-bold tracking-tight text-landing">
+              VApplyIQ AI
             </span>
           </Link>
           <nav className="flex flex-col gap-1">

@@ -6,20 +6,33 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 const KEY = "career-ops:theme";
+const DARK_THEME_COLOR = "#0b1120";
+const LIGHT_THEME_COLOR = "#f6f8fb";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
+    const sync = () => setDark(document.documentElement.classList.contains("dark"));
+    sync();
+    // There can be more than one toggle mounted (mobile header + drawer).
+    // Keep every sun/moon icon synchronized when either control is used.
+    window.addEventListener("themechange", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("themechange", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   function toggle() {
-    const next = !dark;
+    // Read the DOM rather than potentially stale component state. This also
+    // makes rapid clicks and multiple mounted toggles deterministic.
+    const next = !document.documentElement.classList.contains("dark");
     setDark(next);
     document.documentElement.classList.toggle("dark", next);
     // keep the browser chrome (Safari status bar / Dynamic Island) tinted to match
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next ? "#0a0a0a" : "#f7f6f3");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
     try {
       localStorage.setItem(KEY, next ? "dark" : "light");
     } catch {

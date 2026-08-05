@@ -28,10 +28,10 @@ export default function Analytics() {
   const scores = applications.map((a) => scoreNum(a.score)).filter((n) => !Number.isNaN(n));
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
   const buckets = [
-    { label: "4.5 – 5.0", test: (n: number) => n >= 4.5 },
-    { label: "4.0 – 4.4", test: (n: number) => n >= 4 && n < 4.5 },
-    { label: "3.0 – 3.9", test: (n: number) => n >= 3 && n < 4 },
-    { label: "< 3.0", test: (n: number) => n < 3 },
+    { label: "85 – 100", test: (n: number) => n >= 85 },
+    { label: "70 – 84", test: (n: number) => n >= 70 && n < 85 },
+    { label: "55 – 69", test: (n: number) => n >= 55 && n < 70 },
+    { label: "0 – 54", test: (n: number) => n < 55 },
   ].map((b) => ({ label: b.label, n: scores.filter(b.test).length }));
   const maxBucket = Math.max(1, ...buckets.map((b) => b.n));
 
@@ -48,10 +48,27 @@ export default function Analytics() {
       <h1 className="font-display text-2xl tracking-tight text-landing">Analytics</h1>
       <p className="mt-1 text-sm text-muted">Across {total} tracked evaluations.</p>
 
+      {total === 0 && (
+        <div className="mt-8 rounded-2xl border border-dashed border-border bg-surface/40 px-6 py-12 text-center">
+          <p className="font-display text-xl text-foreground">No application data yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+            Analytics will appear after you evaluate and track roles.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Link href="/explore" className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-200">
+              Discover roles
+            </Link>
+            <Link href="/pipeline" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-brand/40">
+              Open pipeline
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* headline stats */}
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {total > 0 && <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat value={total} label="evaluated" />
-        <Stat value={avg ? avg.toFixed(2) : "—"} label="avg score" />
+        <Stat value={avg ? Math.round(avg) : "—"} label="avg job fit" />
         <Stat
           value={interviews}
           label="interviews"
@@ -62,9 +79,9 @@ export default function Analytics() {
           label="offers"
           hint={offers === 0 ? "Offers follow interviews — keep the conversations going →" : undefined}
         />
-      </div>
+      </div>}
 
-      <Section title="Pipeline by stage">
+      {total > 0 && <Section title="Pipeline by stage">
         {stageCounts.map((s) => (
           <Bar
             key={s.key}
@@ -75,19 +92,19 @@ export default function Analytics() {
             tone={s.key === "OFFER" ? "positive" : "neutral"}
           />
         ))}
-      </Section>
+      </Section>}
 
-      <Section title="Score distribution">
+      {total > 0 && <Section title="Job Fit distribution">
         {buckets.map((b) => (
           <Bar key={b.label} label={b.label} value={b.n} pct={(b.n / maxBucket) * 100} total={scores.length} />
         ))}
-      </Section>
+      </Section>}
 
-      <Section title="Top companies" id="companies">
+      {total > 0 && <Section title="Top companies" id="companies">
         {topCompanies.map(([name, n]) => (
           <Bar key={name} label={name} value={n} pct={(n / maxCompany) * 100} />
         ))}
-      </Section>
+      </Section>}
     </div>
   );
 }

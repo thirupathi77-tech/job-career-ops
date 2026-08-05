@@ -283,6 +283,8 @@ Provide a score table:
 | Red flags | -X if any |
 | **Global** | **X.X/5** |
 
+Also calculate the report's **Job Fit Score (0–100)** using this weighted evidence rubric: required skills and experience 35%, responsibilities and domain 20%, seniority alignment 15%, truthful JD keyword coverage 10%, location and work authorization 10%, required education or certifications 5%, and preferred qualifications 5%. Score each dimension 0–100 and round the weighted result to an integer. This is a VApplyIQ AI estimate, not an employer ATS score. Keep the legacy global `/5` score for tracker and automation compatibility, directionally consistent with Job Fit.
+
 #### Machine Summary
 
 Create a machine-readable summary from the completed A-G evaluation and global score. Keep field names exact, use YAML, and do not add prose inside the fence.
@@ -343,6 +345,7 @@ Report header:
 
 **Date:** {{DATE}}
 **Archetype:** {detected}
+**Job Fit Score:** {N/100 — VApplyIQ AI estimate, not an employer ATS score}
 **Score:** {X.X/5}
 **Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
 **Work Auth:** {✅ Sponsors | ➖ Not needed | ⚠️ Unstated | ⛔ No sponsorship}

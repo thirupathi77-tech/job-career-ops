@@ -7,7 +7,7 @@ import { Search, ChevronsUpDown, X, Compass, ArrowRight } from "lucide-react";
 import type { Application, InboxJob } from "@/lib/career-ops";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
-import { canonStatus, scoreNum, scoreTone, statusDot } from "@/lib/format";
+import { canonStatus, formatJobFitScore, scoreNum, scoreTone, statusDot } from "@/lib/format";
 import { InboxTriage } from "@/components/inbox/inbox-triage";
 import { cn } from "@/lib/cn";
 
@@ -47,7 +47,7 @@ export function PipelineView({
   const pTab = (params.get("tab") ?? "").toUpperCase();
   const tab: Tab = (TABS as readonly string[]).includes(pTab) ? (pTab as Tab) : "INBOX";
   const pMin = parseFloat(params.get("min") ?? "");
-  const minFilter: number | null = Number.isFinite(pMin) ? pMin : null;
+  const minFilter: number | null = Number.isFinite(pMin) ? (pMin <= 5 ? pMin * 20 : pMin) : null;
   const pSort = params.get("sort") ?? "";
   const sortKey: SortKey = (SORT_KEYS as readonly string[]).includes(pSort) ? (pSort as SortKey) : "score";
   const sort = { key: sortKey, dir: (params.get("dir") === "1" ? 1 : -1) as 1 | -1 };
@@ -133,6 +133,7 @@ export function PipelineView({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              aria-label="Search pipeline by company or role"
               placeholder="Search company or role…"
               className="w-full rounded-md border border-border bg-surface/60 py-2 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50 focus-visible:ring-2 focus-visible:ring-brand/40"
             />
@@ -152,7 +153,9 @@ export function PipelineView({
           return (
             <button
               key={t}
+              type="button"
               onClick={() => setParams({ tab: t === "INBOX" ? null : t })}
+              aria-pressed={tab === t}
               className={cn(
                 "-mb-px inline-flex items-center justify-center border-b-2 px-3 py-2 text-xs font-medium transition-colors max-sm:min-h-[44px]",
                 tab === t
@@ -190,20 +193,24 @@ export function PipelineView({
         )
       ) : filtered.length > 0 ? (
         /* ── Tracker table ── */
-        <div className="mt-4 overflow-hidden rounded-2xl border border-border">
-          <table className="w-full text-sm">
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-border">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-faint">
               <tr>
                 {SORT_KEYS.map((k) => (
                   <th
                     key={k}
-                    className="cursor-pointer select-none px-4 py-2.5 font-medium hover:text-foreground"
-                    onClick={() => setParams({ sort: k, dir: sort.key === k ? sort.dir * -1 : -1 })}
+                    aria-sort={sort.key === k ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
+                    className="px-4 py-2.5 font-medium"
                   >
-                    <span className="inline-flex items-center gap-1">
-                      {k}
-                      <ChevronsUpDown className="size-3" />
-                    </span>
+                    <button
+                      type="button"
+                      className="inline-flex cursor-pointer select-none items-center gap-1 uppercase tracking-wide hover:text-foreground"
+                      onClick={() => setParams({ sort: k, dir: sort.key === k ? sort.dir * -1 : -1 })}
+                    >
+                      {k === "score" ? "job fit" : k}
+                      <ChevronsUpDown aria-hidden="true" className="size-3" />
+                    </button>
                   </th>
                 ))}
               </tr>
@@ -221,7 +228,7 @@ export function PipelineView({
                     <Link href={`/pipeline/${r.n}`}>{r.role}</Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone={scoreTone(r.score)}>{r.score || "—"}</Badge>
+                    <Badge tone={scoreTone(r.score)}>{r.score ? formatJobFitScore(r.score) : "—"}</Badge>
                   </td>
                   <td className="px-4 py-3 text-muted">
                     <span className="inline-flex items-center gap-1.5">
@@ -262,7 +269,7 @@ function InboxEmpty({ count, filtered }: { count: number; filtered: boolean }) {
         <span className="size-2.5 rounded-full bg-foreground/15" aria-hidden="true" />
         <span className="size-2.5 rounded-full bg-foreground/15" aria-hidden="true" />
         <span className="size-2.5 rounded-full bg-foreground/15" aria-hidden="true" />
-        <span className="ml-3 font-mono text-xs tracking-wide text-muted">career-ops · inbox</span>
+        <span className="ml-3 font-mono text-xs tracking-wide text-muted">VApplyIQ AI · inbox</span>
       </div>
       <div className="px-6 py-10 text-center">
         <p className="font-display text-lg">

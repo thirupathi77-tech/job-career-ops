@@ -38,30 +38,35 @@ export function WorkerPills() {
           const active = pathname === `/jobs/${j.id}`;
           return (
             <li key={j.id}>
-              <Link
-                href={`/jobs/${j.id}`}
+              <div
                 className={cn(
-                  "group block rounded-lg border px-2.5 py-2 transition-colors",
+                  "group relative rounded-lg border px-2.5 py-2 transition-colors",
                   active ? "border-brand/50 bg-brand-soft" : "border-border bg-surface/60 hover:bg-surface-hover",
                 )}
               >
+                <Link
+                  href={`/jobs/${j.id}`}
+                  aria-label={`Open worker ${j.title || j.id}`}
+                  className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                />
                 <WorkerCard
                   job={j}
                   variant="tray"
                   trailing={
                     <button
                       onClick={(e) => {
-                        e.preventDefault();
+                        e.stopPropagation();
                         removeJob(j.id);
                       }}
-                      className="text-faint opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-                      aria-label="Dismiss job"
+                      type="button"
+                      className="relative z-10 text-faint opacity-0 transition-opacity hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+                      aria-label={`Dismiss worker ${j.title || j.id}`}
                     >
                       <X className="size-3" />
                     </button>
                   }
                 />
-              </Link>
+              </div>
             </li>
           );
         })}

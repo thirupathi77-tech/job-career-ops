@@ -1,19 +1,14 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Design tokens — inherited from career-ops-docs. Brand burnt-orange #dd7627
-   (mode-invariant), zinc neutrals, light + dark (Fumadocs neutral values).
-   ────────────────────────────────────────────────────────────────────────── */
+/* VApplyIQ AI design system: clear sky blue, crisp neutral surfaces, and
+   high-contrast typography for a focused professional workspace. */
 @theme {
-  --color-brand: hsl(26 73% 51%);
-  --color-brand-200: hsl(33 100% 60%); /* hover / lighter */
-  /* Near-black on the brand orange: 5.2:1 on brand, 8.3:1 on brand-200 hover
-     (white was 3.14:1, an AA fail in BOTH themes since the button is the same).
-     The brand orange itself is untouched — only what sits on top of it. */
-  --color-brand-foreground: hsl(24 30% 12%);
-  --color-brand-soft: hsl(26 73% 51% / 0.12);
-  --color-brand-secondary: #fc7744;
+  --color-brand: #38bdf8;
+  --color-brand-200: #7dd3fc;
+  --color-brand-foreground: #082f49;
+  --color-brand-soft: rgb(56 189 248 / 0.12);
+  --color-brand-secondary: #0f172a;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
@@ -30,41 +25,37 @@
   --color-foreground: var(--fg);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
-  --color-landing: var(--landing); /* editorial olive (light) / cream (dark) — docs landing-foreground */
-  /* Brand as SMALL TEXT: the raw orange only passes AA in dark (4.95); in light
-     it's 2.6-3.1 on cream/white. brand-text darkens it for light and keeps the
-     raw brand in dark. Use for small text/badges; brand stays for accents,
-     surfaces, icons and large headings (≥24px passes at 3:1). */
+  --color-landing: var(--landing);
   --color-brand-text: var(--brand-text);
 }
 
 :root {
-  --bg: #f7f6f3; /* warm off-white (docs stone tone) */
+  --bg: #f6f8fb;
   --surface: #ffffff;
-  --surface-hover: #efeeea;
-  --border: hsl(40 9% 86%);
-  --fg: hsl(30 10% 11%); /* warm near-black, high legibility */
-  --muted: hsl(35 9% 34%); /* darker than before for readable body text */
-  --faint: hsl(35 7% 42%); /* AA: ~4.6:1 on #fff (was 50% ≈ 3.9:1, failed small text) */
-  --landing: #59592a; /* olive editorial headline */
-  --brand-text: hsl(26 80% 36%); /* darkened brand for small text: 5.5 white / 5.1 cream / 4.7 surface-hover */
-  --dot: 40 8% 42% / 0.09;
-  --pre-bg: #f2f1ed;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --fg: #0f172a;
+  --muted: #475569;
+  --faint: #64748b;
+  --landing: #0f172a;
+  --brand-text: #0369a1;
+  --dot: 215 20% 45% / 0.07;
+  --pre-bg: #f1f5f9;
   color-scheme: light;
 }
 
 .dark {
-  --bg: #0a0a0a;
-  --surface: #161616;
-  --surface-hover: #232323;
-  --border: #262626;
-  --fg: #fafafa;
-  --muted: #a1a1aa;
-  --faint: #8b8b95; /* AA: ~4.6:1 on #161616 (was #71717a ≈ 3.7:1, failed small text) */
-  --landing: #e4e2d0; /* cream editorial headline */
-  --brand-text: hsl(26 73% 51%); /* raw brand already passes in dark (≥4.95 on bg/surface) */
-  --dot: 240 5% 65% / 0.10;
-  --pre-bg: #111111;
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-hover: #1e293b;
+  --border: #273449;
+  --fg: #f8fafc;
+  --muted: #b4c0d0;
+  --faint: #94a3b8;
+  --landing: #f8fafc;
+  --brand-text: #7dd3fc;
+  --dot: 215 25% 70% / 0.08;
+  --pre-bg: #0f172a;
   color-scheme: dark;
 }
 
@@ -74,6 +65,8 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+::selection { background: rgb(56 189 248 / 0.24); }
+:focus-visible { outline-color: var(--color-brand); outline-offset: 3px; }
 html {
   scrollbar-gutter: stable;
 }

@@ -68,20 +68,28 @@ export function statusDot(status: string): string {
   return "bg-zinc-500"; // Evaluated / unknown
 }
 
-/** First number in a score string ("4.1/5", "B+", "3.0") → numeric, or NaN. */
+/** Normalize legacy /5 and native /100 scores to a 0–100 Job Fit Score.
+ * Bare values <=5 are treated as legacy scores; values >5 are already /100. */
 export function scoreNum(s: string): number {
-  const m = s.match(/(\d+(?:\.\d+)?)/);
-  return m ? parseFloat(m[1]) : NaN;
+  const m = s.match(/(\d+(?:\.\d+)?)(?:\s*\/\s*(5|100))?/);
+  if (!m) return NaN;
+  const raw = parseFloat(m[1]);
+  const denominator = m[2] ? Number(m[2]) : raw <= 5 ? 5 : 100;
+  return Math.max(0, Math.min(100, denominator === 5 ? raw * 20 : raw));
 }
 
-/** Score → tone, mirroring the Go TUI thresholds (>=4.2 green, >=3.8 yellow,
- *  >=3.0 normal, <3.0 red). */
+export function formatJobFitScore(score: string | number): string {
+  const n = scoreNum(String(score));
+  return Number.isNaN(n) ? String(score || "—") : `${Math.round(n)}/100`;
+}
+
+/** Job Fit Score tone: 85+ excellent, 70+ strong, 55+ moderate, below 55 weak. */
 export function scoreTone(score: string): "good" | "warn" | "bad" | "muted" {
   const num = scoreNum(score);
   if (!Number.isNaN(num)) {
-    if (num >= 4.2) return "good";
-    if (num >= 3.8) return "warn";
-    if (num >= 3.0) return "muted";
+    if (num >= 85) return "good";
+    if (num >= 70) return "warn";
+    if (num >= 55) return "muted";
     return "bad";
   }
   const g = score.trim().toUpperCase()[0];
@@ -115,6 +123,7 @@ const FIELD_KEYS: Record<string, string> = {
   archetype: "Archetype",
   arquetipo: "Archetype",
   score: "Score",
+  "job fit score": "Job Fit Score",
   legitimacy: "Legitimacy",
   legitimidad: "Legitimacy",
   pdf: "PDF",

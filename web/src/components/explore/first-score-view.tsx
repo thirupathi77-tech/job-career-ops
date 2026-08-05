@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sparkles, X, FileText, Compass, ShieldCheck, Coins } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
-import { parseReport, scoreTone, legitimacyTone } from "@/lib/format";
+import { formatJobFitScore, parseReport, scoreTone, legitimacyTone } from "@/lib/format";
 import { useJobs, type Job } from "@/components/jobs/job-store";
 
 const SEEN_KEY = "career-ops:first-score-seen";
@@ -140,9 +140,9 @@ export function FirstScoreView() {
                     tone === "good" ? "text-emerald-500" : tone === "warn" ? "text-amber-500" : tone === "bad" ? "text-red-400" : "text-muted",
                   )}
                 >
-                  {score}
+                  {formatJobFitScore(score).replace("/100", "")}
                 </div>
-                <div className="text-[11px] uppercase tracking-wide text-faint">/ 5 fit</div>
+                <div className="text-[11px] uppercase tracking-wide text-faint">/ 100 job fit</div>
               </div>
             )}
           </div>

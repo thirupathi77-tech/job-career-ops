@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2, Wrench, CircleDot, Check, X } from "lucide-react";
 import { useJobs } from "@/components/jobs/job-store";
 import { HeroGlow } from "@/components/hero-glow";
 import { Badge } from "@/components/ui/badge";
+import { formatJobFitScore } from "@/lib/format";
 
 export default function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -49,7 +50,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
           {job.subtitle && <p className="mt-1 text-sm text-muted">{job.subtitle}</p>}
           {job.result?.score != null && (
             <div className="mt-3 flex flex-wrap items-center gap-2.5">
-              <Badge tone={job.result.tone}>{job.result.score}/5</Badge>
+              <Badge tone={job.result.tone}>Job Fit {formatJobFitScore(job.result.score)}</Badge>
               {job.result.summary && <span className="text-sm text-muted">{job.result.summary}</span>}
             </div>
           )}

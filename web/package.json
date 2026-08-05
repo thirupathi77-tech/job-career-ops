@@ -2,7 +2,7 @@
   "name": "@career-ops/web",
   "version": "0.5.0",
   "private": true,
-  "description": "Official web experience for career-ops — local-first.",
+  "description": "VApplyIQ AI local-first job search and career operations experience.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

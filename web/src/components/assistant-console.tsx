@@ -35,7 +35,7 @@ const NAV_RE = /<<\s*go:\s*(\/[a-z0-9/_-]*)\s*>>/gi;
 const REMEMBER_RE = /<<\s*remember:\s*([^>]+?)\s*>>/gi;
 
 const GREETING =
-  "Hi — I'm your career-ops assistant. I can walk you through onboarding, answer questions about your pipeline, or take you where you need to go. What would you like to do?";
+  "Hi — I'm your VApplyIQ AI assistant. I can walk you through onboarding, answer questions about your pipeline, or take you where you need to go. What would you like to do?";
 
 // ── envelope parsing: act ONLY on complete <<act:ID {json}>> envelopes ────────
 function codeRanges(s: string): [number, number][] {
@@ -459,7 +459,7 @@ export function AssistantConsole() {
     const pending = pipeline.inbox.filter((j) => !j.done);
     if (!pipeline.applications.length && !pending.length) {
       return [
-        { label: "Help me get set up", send: "Help me get started with career-ops — what do you need from me?" },
+        { label: "Help me get set up", send: "Help me get started with VApplyIQ AI — what do you need from me?" },
         { label: "Improve my CV", send: "Look at my CV and suggest the highest-impact improvements." },
       ];
     }
@@ -470,8 +470,8 @@ export function AssistantConsole() {
       if (top && top[1] > 1) chips.push({ label: `Evaluate all ${top[0]} (${top[1]})`, send: `Evaluate all the pending ${top[0]} postings in my inbox.` });
       chips.push({ label: `Triage inbox (${pending.length})`, send: `I have ${pending.length} postings in my inbox — which should I evaluate first, and why?` });
     }
-    const strong = pipeline.applications.filter((a) => scoreNum(a.score) >= 4.5).length;
-    if (strong) chips.push({ label: "Strong matches to act on", send: "Show me my strongest matches (4.5+) I haven't applied to yet, and tell me which to prioritise." });
+    const strong = pipeline.applications.filter((a) => scoreNum(a.score) >= 85).length;
+    if (strong) chips.push({ label: "Strong matches to act on", send: "Show me my strongest Job Fit matches (85+) I haven't applied to yet, and tell me which to prioritise." });
     chips.push({ label: "What should I do today?", send: "Look at my pipeline and tell me the 3 highest-leverage things I should do today." });
     return chips.slice(0, 4);
   }, [pathname, pipeline.inbox, pipeline.applications]);

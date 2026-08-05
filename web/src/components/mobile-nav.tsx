@@ -104,10 +104,10 @@ export function MobileNav() {
     <>
       <style>{STYLE}</style>
 
-      <header className="co-mnav flex items-center gap-2 border-b border-border px-4 pb-3 md:hidden">
-        <Link href="/" className="flex min-h-[44px] items-center gap-2" aria-label="career-ops home">
+      <header className="co-mnav flex items-center gap-2 border-b border-border bg-surface px-4 pb-3 md:hidden">
+        <Link href="/" className="flex min-h-[44px] items-center gap-2" aria-label="VApplyIQ AI home">
           <CoMark size={26} />
-          <span className={`${instrumentSerif.className} relative -top-px text-xl text-landing`}>career-ops</span>
+          <span className="relative -top-px text-lg font-bold tracking-tight text-landing">VApplyIQ AI</span>
         </Link>
         <div className="ml-auto flex items-center gap-0.5">
           <ThemeToggle />

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, X, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CompanyLogo } from "@/components/company-logo";
-import { scoreNum, scoreTone } from "@/lib/format";
+import { formatJobFitScore, scoreNum, scoreTone } from "@/lib/format";
 import type { Application } from "@/lib/career-ops";
 
 // Awaiting-decision row: a scored role with no terminal status. One-tap Apply /
@@ -14,17 +14,23 @@ export function DecisionCard({ app }: { app: Application }) {
   const router = useRouter();
   const [busy, setBusy] = useState<"" | "Applied" | "Discarded">("");
   const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const score = scoreNum(app.score);
   const tone = scoreTone(app.score);
 
   const setStatus = async (status: "Applied" | "Discarded") => {
     setBusy(status);
+    setError("");
     try {
-      await fetch("/api/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ n: app.n, status }) });
+      const res = await fetch("/api/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ n: app.n, status }) });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Could not update this application.");
+      }
       setDone(status);
       router.refresh();
-    } catch {
-      /* ignore */
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update this application.");
     } finally {
       setBusy("");
     }
@@ -47,7 +53,7 @@ export function DecisionCard({ app }: { app: Application }) {
               tone === "good" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : tone === "warn" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-surface-hover text-muted",
             )}
           >
-            {app.score}
+            {formatJobFitScore(app.score)}
           </span>
         )}
       </div>
@@ -76,6 +82,7 @@ export function DecisionCard({ app }: { app: Application }) {
           <FileText className="size-4" />
         </a>
       </div>
+      {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

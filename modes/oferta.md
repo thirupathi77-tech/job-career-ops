@@ -512,6 +512,22 @@ Apply all language rules from `_writing.md` Professional Writing section to the 
 
 **ALWAYS** after generating blocks A-G:
 
+### Job Fit Score (0–100)
+
+Calculate a transparent weighted estimate from evidence already established in the evaluation:
+
+| Dimension | Weight |
+|---|---:|
+| Required skills and experience | 35% |
+| Responsibilities and domain | 20% |
+| Seniority alignment | 15% |
+| Truthful JD keyword coverage | 10% |
+| Location and work authorization | 10% |
+| Required education or certifications | 5% |
+| Preferred qualifications | 5% |
+
+Score each dimension from 0–100, multiply by its weight, and round the weighted total to an integer. Never treat missing evidence as a match. An explicit hard blocker remains a blocker regardless of the numeric total. Label this **Job Fit Score** and state that it is a VApplyIQ AI estimate, not an employer ATS score. Keep the legacy 1–5 score for tracker and automation compatibility; it must remain directionally consistent with the 100-point score.
+
 ### 1. Save report .md
 
 Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
@@ -530,6 +546,7 @@ Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 **URL:**
 **Via:** {agency/recruiter firm, or — for direct applications}
 **Archetype:** {detected}
+**Job Fit Score:** {N/100 — VApplyIQ AI estimate, not an employer ATS score}
 **Score:** {X/5}
 **Legitimacy:** {High Confidence | Proceed with Caution | Suspicious}
 **Work Auth:** {✅ Sponsors | ➖ Not needed | ⚠️ Unstated | ⛔ No sponsorship}

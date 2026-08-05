@@ -30,21 +30,32 @@ export function TodayDashboard({
   const [followups, setFollowups] = useState<FollowUp[]>([]);
   const [overdue, setOverdue] = useState(0);
   const [fresh, setFresh] = useState<DiscoveredOffer[]>([]);
+  const [loadingQueues, setLoadingQueues] = useState(true);
   const router = useRouter();
   const dateLabel = useMemo(() => new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }), []);
 
-  const refetch = useCallback(() => {
-    fetch("/api/followups")
-      .then((r) => r.json())
+  const refetch = useCallback(async () => {
+    setLoadingQueues(true);
+    await Promise.allSettled([
+      fetch("/api/followups")
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
       .then((d) => {
         setFollowups(Array.isArray(d.entries) ? d.entries : []);
         setOverdue(d.metadata?.overdue ?? d.entries?.length ?? 0);
       })
-      .catch(() => {});
-    fetch("/api/whats-new")
-      .then((r) => r.json())
+      .catch(() => {}),
+      fetch("/api/whats-new")
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
       .then((d) => setFresh(Array.isArray(d.offers) ? d.offers : []))
-      .catch(() => {});
+      .catch(() => {}),
+    ]);
+    setLoadingQueues(false);
   }, []);
 
   useEffect(() => {
@@ -67,7 +78,7 @@ export function TodayDashboard({
   );
 
   const newThisWeek = fresh.length;
-  const allClear = newThisWeek === 0 && overdue === 0 && awaiting.length === 0;
+  const allClear = !loadingQueues && newThisWeek === 0 && overdue === 0 && awaiting.length === 0;
   const inboxUrls = useMemo(() => new Set(inbox.map((j) => j.url)), [inbox]);
 
   return (
@@ -81,7 +92,9 @@ export function TodayDashboard({
             <span className="text-faint">//</span> today · <span className="tabular-nums">{dateLabel}</span>
           </p>
           <h1 className={`${instrumentSerif.className} mt-3 text-4xl leading-[1.05] text-landing md:text-5xl`}>
-            {allClear ? (
+            {loadingQueues ? (
+              <>Loading today&apos;s priorities…</>
+            ) : allClear ? (
               <>You&apos;re all caught up.</>
             ) : (
               <>
@@ -100,7 +113,7 @@ export function TodayDashboard({
             )}
           </h1>
           <p className="mt-4 max-w-xl text-sm text-muted">
-            {allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
+            {loadingQueues ? "Checking new matches and follow-ups…" : allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition hover:bg-brand-200 max-sm:min-h-[44px]">

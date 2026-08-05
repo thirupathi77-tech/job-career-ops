@@ -8,6 +8,7 @@ import { ATS_LABEL } from "@/lib/explore";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
 import { cn } from "@/lib/cn";
+import { formatJobFitScore } from "@/lib/format";
 
 export type RowScore = { score: number | null; tone: "good" | "warn" | "bad" | "muted"; jobId: string; running: boolean };
 
@@ -89,7 +90,7 @@ export function TriageRow({
               <span className="text-brand max-sm:hidden">Scoring…</span>
             </>
           ) : (
-            <Badge tone={scored!.tone}>{scored!.score}/5</Badge>
+            <Badge tone={scored!.tone}>{formatJobFitScore(scored!.score!)}</Badge>
           )}
         </Link>
       ) : (

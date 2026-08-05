@@ -220,9 +220,23 @@ export function runDiscovery(filters: ExploreFilters, onEvent: (e: ScanEvent) =>
       onEvent({ kind: "error", message: e instanceof Error ? e.message : "scanner failed to start" });
       resolve(offers);
     });
-    child.on("close", () => {
+    child.on("close", (code, signal) => {
       clearTimeout(killer);
       cleanupTempPortals(tempPortals);
+      if (code !== 0) {
+        const detail = errBuf
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .slice(-3)
+          .join(" ");
+        onEvent({
+          kind: "error",
+          message: detail || (signal ? `Discovery scanner stopped (${signal}).` : `Discovery scanner exited with code ${code ?? "unknown"}.`),
+        });
+        resolve(offers);
+        return;
+      }
       if (useJson) {
         let j: ScanJson | null = null;
         try {

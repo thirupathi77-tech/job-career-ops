@@ -41,6 +41,7 @@ export function ConfigForm() {
   const [apiKey, setApiKey] = useState("");
   const [logos, setLogos] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   // Load saved prefs
   useEffect(() => {
@@ -63,23 +64,35 @@ export function ConfigForm() {
   // Detect installed CLIs
   useEffect(() => {
     fetch("/api/clis")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`CLI detection failed (${r.status}).`);
+        return r.json();
+      })
       .then((d) => {
         const list: Cli[] = d.clis ?? [];
         setClis(list);
         // auto-select first installed if nothing chosen yet
         setCliId((prev) => prev || list.find((c) => c.installed)?.id || "");
       })
-      .catch(() => setClis([]));
+      .catch((e) => {
+        setClis([]);
+        setError(e instanceof Error ? e.message : "Could not detect installed AI tools.");
+      });
   }, []);
 
   function save() {
     // The API key is deliberately NOT persisted: nothing reads it yet (the
     // key/manual panel is unwired) and a secret must never sit in clear-text
     // localStorage. Keys belong in the user's own CLI/provider config.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode, cliId, provider, logos }));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setError("");
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ mode, cliId, provider, logos }));
+      window.dispatchEvent(new CustomEvent("career-ops:config-change"));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setError("Could not save configuration in this browser.");
+    }
   }
 
   const installed = clis?.filter((c) => c.installed) ?? [];
@@ -88,7 +101,7 @@ export function ConfigForm() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="font-display text-2xl tracking-tight text-landing">Config</h1>
       <p className="mt-1 text-sm text-muted">
-        Run career-ops on your own AI, right on your computer. Your CV and data never leave your machine.
+        Run VApplyIQ AI on your own AI, right on your computer. Your CV and data never leave your machine.
       </p>
 
       {/* Engine mode */}
@@ -125,7 +138,7 @@ export function ConfigForm() {
         {mode === "cli" && (
           <div>
             <p className="mb-1 text-sm text-muted">
-              career-ops uses an AI tool you already have — signed in, your own usage, nothing to paste.
+              VApplyIQ AI uses an AI tool you already have — signed in, your own usage, nothing to paste.
             </p>
             <p className="mb-3 text-xs text-faint">Works with Claude Code, Codex, OpenCode and more — free ones work great.</p>
             {clis === null ? (
@@ -268,6 +281,8 @@ export function ConfigForm() {
       <button
         type="button"
         onClick={() => setLogos((v) => !v)}
+        role="switch"
+        aria-checked={logos}
         className="flex w-full items-center justify-between gap-4 rounded-xl border border-border bg-surface/50 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
       >
         <span className="min-w-0">
@@ -305,6 +320,7 @@ export function ConfigForm() {
         </button>
         <span className="text-xs text-faint">Local-first · on our roadmap</span>
       </div>
+      {error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }
@@ -329,6 +345,7 @@ function ModeCard({
       type="button"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
+      aria-pressed={active}
       className={cn(
         "flex flex-col gap-1.5 rounded-xl border px-4 py-3 text-left transition-colors",
         disabled

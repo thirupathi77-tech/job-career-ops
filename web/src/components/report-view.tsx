@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Application } from "@/lib/career-ops";
 import { Badge } from "@/components/ui/badge";
-import { scoreTone, scoreNum, legitimacyTone, parseReport } from "@/lib/format";
+import { formatJobFitScore, scoreTone, scoreNum, legitimacyTone, parseReport } from "@/lib/format";
 import { StatusSelect } from "@/components/status-select";
 import { CompanyLogo } from "@/components/company-logo";
 import { ScoreMethodology } from "@/components/score-methodology";
@@ -87,7 +87,7 @@ export function ReportView({
 }) {
   const meta = report ? parseReport(report) : null;
   const field = (label: string) => meta?.fields.find((f) => f.label === label)?.value;
-  const score = app?.score || field("Score");
+  const score = field("Job Fit Score") || app?.score || field("Score");
   const date = app?.date || field("Date");
   const archetype = field("Archetype");
   const url = field("URL");
@@ -112,13 +112,13 @@ export function ReportView({
         {app?.role && <p className="mt-1 text-muted">{app.role}</p>}
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          {score && <Badge tone={scoreTone(score)}>{score}</Badge>}
-          {/* Verdict-first: the score's apply/don't-apply call (4.0 is the line,
+          {score && <Badge tone={scoreTone(score)}>Job Fit {formatJobFitScore(score)}</Badge>}
+          {/* Verdict-first: the score's apply/don't-apply call (80 is the line,
               per the public methodology) as a <2s-scannable chip. */}
           {(() => {
             const n = scoreNum(score ?? "");
             if (Number.isNaN(n)) return null;
-            return n >= 4.0 ? <Badge tone="good">Recommended</Badge> : <Badge tone="muted">Below the apply line</Badge>;
+            return n >= 80 ? <Badge tone="good">Recommended</Badge> : <Badge tone="muted">Below the apply line</Badge>;
           })()}
           {meta?.legitimacy && <Badge tone={legitimacyTone(meta.legitimacy)}>{meta.legitimacy}</Badge>}
           {app && <StatusSelect n={id} current={app.status} />}

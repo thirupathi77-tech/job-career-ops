@@ -236,12 +236,20 @@ export function ExplorerView({
 }
 
 function DiscoverBar({ canDiscover, onDiscover, label }: { canDiscover: boolean; onDiscover: () => void; label: string }) {
+  const commitAndDiscover = () => {
+    // Keyword fields keep the text being typed as a local draft until blur.
+    // Clicking Discover must commit that draft before Explore snapshots filters.
+    // Deferring one task lets React process the blur/onChange update first.
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement && active.closest(".co-fb__field")) active.blur();
+    window.setTimeout(onDiscover, 0);
+  };
   return (
     <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
         disabled={!canDiscover}
-        onClick={onDiscover}
+        onClick={commitAndDiscover}
         className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow-sm transition-all hover:brightness-110 disabled:opacity-50 max-sm:min-h-[44px]"
       >
         <Compass className="size-4" /> {label}

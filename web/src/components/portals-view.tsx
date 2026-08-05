@@ -8,7 +8,7 @@ import { useJobs, type Job } from "@/components/jobs/job-store";
 import { cn } from "@/lib/cn";
 
 type Company = { name: string; status: string; detail: string };
-type Result = { available: boolean; configured: boolean; companies: Company[] };
+type Result = { available: boolean; configured: boolean; companies: Company[]; error?: string };
 
 const TONE: Record<string, { dot: string; label: string; chip: string }> = {
   live: { dot: "bg-emerald-500", label: "live", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
@@ -37,9 +37,13 @@ export function PortalsView() {
   function check() {
     setLoading(true);
     fetch("/api/portals/verify")
-      .then((r) => r.json())
+      .then(async (r) => {
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body.error || `Portal check failed (${r.status}).`);
+        return body as Result;
+      })
       .then(setRes)
-      .catch(() => setRes({ available: false, configured: false, companies: [] }))
+      .catch((e) => setRes({ available: true, configured: true, companies: [], error: e instanceof Error ? e.message : "Portal check failed." }))
       .finally(() => setLoading(false));
   }
 
@@ -52,6 +56,7 @@ export function PortalsView() {
     <div>
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={check}
           disabled={loading}
           className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200 disabled:opacity-50 max-sm:min-h-[44px]"
@@ -68,13 +73,18 @@ export function PortalsView() {
           checkout (the web orchestrates the core&apos;s validator).
         </p>
       )}
+      {res?.error && (
+        <p role="alert" className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+          {res.error}
+        </p>
+      )}
       {res && res.available && !res.configured && (
         <p className="mt-4 rounded-xl border border-dashed border-border bg-surface/30 p-4 text-sm text-muted">
           No <code className="text-foreground">portals.yml</code> yet — ask the assistant to set up the companies to scan.
         </p>
       )}
 
-      {res && res.configured && (
+      {res && res.configured && !res.error && (
         <div className="mt-5">
           <p className="text-sm text-muted">
             <span className="tabular-nums text-emerald-600 dark:text-emerald-400">{liveN}</span> live ·{" "}

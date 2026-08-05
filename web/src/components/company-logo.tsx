@@ -25,14 +25,30 @@ export function CompanyLogo({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CONFIG_KEY);
-      const v = raw ? JSON.parse(raw) : null;
-      setEnabled(v?.logos !== false); // default ON unless explicitly disabled
-    } catch {
-      setEnabled(true);
-    }
+    const sync = () => {
+      try {
+        const raw = localStorage.getItem(CONFIG_KEY);
+        const v = raw ? JSON.parse(raw) : null;
+        setEnabled(v?.logos !== false); // default ON unless explicitly disabled
+      } catch {
+        setEnabled(true);
+      }
+    };
+    sync();
+    window.addEventListener("career-ops:config-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("career-ops:config-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
+
+  useEffect(() => {
+    // A recycled row can point at a different company. Never let the previous
+    // image's load/error state leak into the new company's mark.
+    setFailed(false);
+    setLoaded(false);
+  }, [name]);
 
   const domain = companyDomain(name);
   const hue = monogramHue(name);

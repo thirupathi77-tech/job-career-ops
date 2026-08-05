@@ -13,19 +13,25 @@ export function CvEditor() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/cv")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Could not load CV (${r.status}).`);
+        return r.json();
+      })
       .then((d) => {
         setContent(d.content ?? "");
         setExists(d.exists ?? false);
       })
+      .catch((e) => setError(e instanceof Error ? e.message : "Could not load CV."))
       .finally(() => setLoaded(true));
   }, []);
 
   async function save() {
     setSaving(true);
+    setError("");
     try {
       const res = await fetch("/api/cv", {
         method: "POST",
@@ -37,7 +43,12 @@ export function CvEditor() {
         setExists(true);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
+      } else {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(body.error || `Could not save CV (${res.status}).`);
       }
+    } catch {
+      setError("Could not save CV. Check that the local server can write cv.md.");
     } finally {
       setSaving(false);
     }
@@ -69,12 +80,15 @@ export function CvEditor() {
         </button>
       </div>
 
+      {error && <p role="alert" className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
+
       {!loaded ? (
         <div className="mt-6 text-sm text-muted">Loading…</div>
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <textarea
             value={content}
+            aria-label="CV markdown editor"
             onChange={(e) => {
               setContent(e.target.value);
               setDirty(true);
@@ -83,7 +97,7 @@ export function CvEditor() {
             placeholder="# Your Name&#10;&#10;## Summary&#10;..."
             className="min-h-[60vh] w-full resize-none rounded-2xl border border-border bg-surface/50 p-4 font-mono text-sm leading-relaxed outline-none transition-colors placeholder:text-faint focus:border-brand/40"
           />
-          <article className="report-prose min-h-[60vh] overflow-auto rounded-2xl border border-border bg-surface/30 p-5">
+          <article aria-label="CV preview" className="report-prose min-h-[60vh] overflow-auto rounded-2xl border border-border bg-surface/30 p-5">
             {content.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             ) : (

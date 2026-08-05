@@ -1,17 +1,16 @@
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
-// Transparency = our differentiator ("why it's a 4.0 for YOU"). The wording is
-// the CANONICAL public text from career-ops.org/methodology + /docs — rendered
-// verbatim, NOT a web reinterpretation of the rubric (whose weights live in the
-// core, modes/_shared.md). Native <details> → no client JS.
+// Transparent 100-point Job Fit estimate. This is VApplyIQ AI's assessment,
+// never represented as an employer's private ATS score.
 
 const DIMENSIONS: [string, string][] = [
-  ["Match", "how well your CV maps to the role's requirements"],
-  ["North-star alignment", "how far the role moves you toward your stated career goal"],
-  ["Compensation", "the offer vs market rates (says “insufficient data” when comp is missing — never invents numbers)"],
-  ["Cultural signals", "team, values and ways-of-working signals from the posting"],
-  ["Red flags", "ghost-job, scam or mismatch warnings"],
-  ["Overall", "the single judgment that rolls the above into the score"],
+  ["Required skills & experience · 35%", "evidence in your CV for the job's must-have requirements"],
+  ["Responsibilities & domain · 20%", "similarity between your proven work and the role's actual scope"],
+  ["Seniority alignment · 15%", "fit between your level and the role's expected ownership"],
+  ["Keyword coverage · 10%", "job-description language supported by truthful resume evidence"],
+  ["Location & work authorization · 10%", "location feasibility and sponsorship constraints"],
+  ["Education or certifications · 5%", "required credentials explicitly supported by your CV"],
+  ["Preferred qualifications · 5%", "evidence for the posting's optional advantages"],
 ];
 
 const BLOCKS: [string, string][] = [
@@ -28,17 +27,17 @@ export function ScoreMethodology() {
   return (
     <details className="group mt-10 overflow-hidden rounded-2xl border border-border bg-surface/30">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors hover:bg-surface-hover">
-        How career-ops scored this — and why it&apos;s for <span className="text-landing">you</span>
+        How VApplyIQ AI scored this — and why it&apos;s for <span className="text-landing">you</span>
         <ChevronDown className="ml-auto size-4 text-faint transition-transform group-open:rotate-180" />
       </summary>
       <div className="space-y-5 border-t border-border px-5 py-4 text-sm">
         <p className="text-muted">
-          Every role is scored <strong className="text-foreground">1.0–5.0</strong> across six dimensions.{" "}
-          <strong className="text-brand">4.0</strong> is the apply / don&apos;t-apply line — below it, career-ops
-          recommends against applying.
+          Every role receives a <strong className="text-foreground">0–100 Job Fit Score</strong>. It is a transparent
+          VApplyIQ AI estimate, not a score produced by an employer&apos;s ATS. <strong className="text-brand">80</strong> is
+          the default apply line; explicit hard blockers can still override a high numeric match.
         </p>
         <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-faint">The six dimensions</div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-faint">Weighted dimensions</div>
           <ul className="space-y-1.5">
             {DIMENSIONS.map(([k, v]) => (
               <li key={k}>
@@ -60,14 +59,7 @@ export function ScoreMethodology() {
             ))}
           </ul>
         </div>
-        <a
-          href="https://career-ops.org/methodology"
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-brand transition-colors hover:underline"
-        >
-          Full methodology <ExternalLink className="size-3" />
-        </a>
+        <p className="text-xs text-faint">The score supports prioritization; always review hard blockers and the evidence table before applying.</p>
       </div>
     </details>
   );
