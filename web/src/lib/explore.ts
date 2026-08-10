@@ -63,6 +63,7 @@ export type DiscoveredOffer = {
   /** human freshness ("~5d ago", "unknown") shown when postedAt is "" */
   postedHint?: string;
   confidence?: "low" | "medium" | "high";
+  visaSponsorship?: "sponsors" | "no-sponsorship" | "unknown";
 };
 
 /** The two discovery surfaces: free deterministic Scan vs token-spending AI search. */

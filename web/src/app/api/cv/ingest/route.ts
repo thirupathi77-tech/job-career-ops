@@ -181,7 +181,7 @@ export async function POST(req: Request) {
         buf += d.toString();
         let nl: number;
         while ((nl = buf.indexOf("\n")) !== -1) {
-          const line = buf.slice(0, nl).trim();
+      const line = buf.slice(0, nl).trim();
           buf = buf.slice(nl + 1);
           if (!line) continue;
           try {

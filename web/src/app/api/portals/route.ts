@@ -3,6 +3,7 @@ import path from "node:path";
 import yaml from "js-yaml";
 import { careerOpsRoot } from "@/lib/career-ops";
 import { atomicWriteWithBackup } from "@/lib/core/safe-write";
+import { expandTargetRoles } from "@/lib/role-expansion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "bad json" }, { status: 400 });
   }
-  const roles = (Array.isArray(body.roles) ? body.roles : []).map((r) => String(r).trim()).filter(Boolean).slice(0, 24);
+  const roles = expandTargetRoles((Array.isArray(body.roles) ? body.roles : []).map((r) => String(r).trim()).filter(Boolean));
   if (roles.length === 0) return Response.json({ error: "no roles" }, { status: 400 });
 
   const root = careerOpsRoot();

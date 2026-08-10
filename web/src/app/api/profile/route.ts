@@ -3,6 +3,7 @@ import path from "node:path";
 import yaml from "js-yaml";
 import { careerOpsRoot } from "@/lib/career-ops";
 import { atomicWriteWithBackup } from "@/lib/core/safe-write";
+import { expandTargetRoles } from "@/lib/role-expansion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ function patchToProfile(p: ProfilePatch): Record<string, unknown> {
   if (p.email) candidate.email = p.email;
   if (p.location) candidate.location = p.location;
   if (Object.keys(candidate).length) out.candidate = candidate;
-  if (p.roles?.length) out.target_roles = { primary: p.roles.slice(0, 6) };
+  if (p.roles?.length) out.target_roles = { primary: expandTargetRoles(p.roles).slice(0, 6) };
   const comp: Record<string, unknown> = {};
   if (p.compMin && p.compMax) comp.target_range = `${p.compMin}-${p.compMax}`;
   if (p.currency) comp.currency = p.currency;

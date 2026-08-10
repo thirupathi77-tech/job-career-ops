@@ -548,6 +548,25 @@ export function buildVisaFilter(visaFilter) {
   };
 }
 
+export function classifyVisaSponsorship(description, visaFilter) {
+  const hasText = typeof description === 'string' && description.trim() !== '';
+  if (!hasText) return 'unknown';
+  const positive = visaFilter?.positive != null
+    ? normalizeKeywordList(visaFilter.positive)
+    : DEFAULT_VISA_POSITIVE.slice();
+  const negative = visaFilter?.negative != null
+    ? normalizeKeywordList(visaFilter.negative)
+    : DEFAULT_VISA_NEGATIVE.slice();
+  const requireMention = visaFilter?.require_mention === true;
+  const lower = description.toLowerCase();
+  if (negative.length > 0 && negative.some(k => lower.includes(k))) return 'no-sponsorship';
+  if (requireMention) {
+    if (positive.length === 0) return 'sponsors';
+    return positive.some(k => lower.includes(k)) ? 'sponsors' : 'unknown';
+  }
+  return positive.some(k => lower.includes(k)) ? 'sponsors' : 'unknown';
+}
+
 // ── Salary filter ───────────────────────────────────────────────────
 // Optional. If `salary_filter` is absent from portals.yml, all salaries pass.
 // Semantics:
@@ -2128,6 +2147,7 @@ async function main() {
           totalFilteredVisa++;
           continue;
         }
+        job.visaSponsorship = classifyVisaSponsorship(job.description, config.visa_filter);
         const dedupUrl = normalizeUrlForDedup(job.url);
         if (seenUrls.has(dedupUrl)) {
           totalDupes++;

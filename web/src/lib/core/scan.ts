@@ -68,7 +68,15 @@ export function scannerSupportsJson(): boolean {
   }
 }
 
-type JsonOffer = { company?: string; title?: string; url?: string; location?: string | null; postedAt?: string | null; source?: string };
+type JsonOffer = {
+  company?: string;
+  title?: string;
+  url?: string;
+  location?: string | null;
+  postedAt?: string | null;
+  source?: string;
+  visaSponsorship?: "sponsors" | "no-sponsorship" | "unknown";
+};
 type ScanJson = {
   companiesAvailable?: number;
   companiesScanned?: number;
@@ -259,6 +267,7 @@ export function runDiscovery(filters: ExploreFilters, onEvent: (e: ScanEvent) =>
               source,
               url,
               matchedKeyword: firstMatch(o.title, filters.positive),
+              visaSponsorship: o.visaSponsorship,
             };
             offers.push(offer);
             onEvent({ kind: "offer", offer });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, Plus, Check, Loader2, ShieldQuestion, Sparkles, Coins } from "lucide-react";
+import { ExternalLink, Plus, Check, Loader2, ShieldQuestion, ShieldCheck, ShieldAlert, Sparkles, Coins } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
 import { ATS_LABEL, type AtsSource, type DiscoveredOffer } from "@/lib/explore";
@@ -38,6 +38,17 @@ function Logo({ company }: { company: string }) {
 // What a running worker is doing on this exact posting → the live CTA label.
 const WORKER_LABEL: Record<string, string> = { evaluate: "Evaluating…", pdf: "Preparing CV…", research: "Researching…", apply: "Filling…" };
 
+function visaBadge(offer: DiscoveredOffer) {
+  switch (offer.visaSponsorship) {
+    case "sponsors":
+      return { label: "Visa sponsorship likely", tone: "text-emerald-600 dark:text-emerald-400", icon: ShieldCheck, title: "Posting language suggests sponsorship is available." };
+    case "no-sponsorship":
+      return { label: "No sponsorship signal", tone: "text-amber-600 dark:text-amber-300", icon: ShieldAlert, title: "Posting language suggests sponsorship is not available." };
+    default:
+      return { label: "Visa unknown", tone: "text-faint", icon: ShieldQuestion, title: "No clear sponsorship signal was found in the posting text." };
+  }
+}
+
 export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: DiscoveredOffer; inPipeline: boolean; evaluatedN?: string }) {
   const { added, adding, addToPipeline } = useExplore();
   const { jobs, startJob } = useJobs();
@@ -56,6 +67,7 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
   const isAdding = adding.has(offer.url);
   const unverified = offer.verification === "unconfirmed";
   const fresh = freshness(offer.postedAt) || offer.postedHint || "";
+  const visa = visaBadge(offer);
 
   const evaluate = () => {
     addToPipeline([offer]); // evaluating implies it's in the pipeline — record it
@@ -101,6 +113,10 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
             · matched <span className="text-brand/80">{offer.matchedKeyword}</span>
           </span>
         )}
+        <span className={cn("inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 font-medium", visa.tone)} title={visa.title}>
+          <visa.icon className="size-3" />
+          {visa.label}
+        </span>
       </div>
 
       {offer.why && (
