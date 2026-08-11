@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, ChevronsUpDown, X, Compass, ArrowRight } from "lucide-react";
+import { Search, ChevronsUpDown, X, Compass, ArrowRight, ShieldAlert, ShieldCheck, ShieldQuestion, ExternalLink } from "lucide-react";
 import type { Application, InboxJob } from "@/lib/career-ops";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
 import { canonStatus, formatJobFitScore, scoreNum, scoreTone, statusDot } from "@/lib/format";
 import { InboxTriage } from "@/components/inbox/inbox-triage";
 import { cn } from "@/lib/cn";
-
 // INBOX (the triage queue) is the default tab; the rest filter the tracker.
 const TABS = [
   "INBOX",
@@ -29,6 +28,17 @@ type Tab = (typeof TABS)[number];
 
 const SORT_KEYS = ["company", "role", "score", "status", "date"] as const;
 type SortKey = (typeof SORT_KEYS)[number];
+
+function sponsorshipBadge(sig?: string) {
+  switch (sig) {
+    case "sponsors":
+      return { label: "Visa sponsorship likely", tone: "text-emerald-600 dark:text-emerald-400", icon: ShieldCheck, title: "Tracker row indicates sponsorship is likely available." };
+    case "no-sponsorship":
+      return { label: "No sponsorship signal", tone: "text-amber-600 dark:text-amber-300", icon: ShieldAlert, title: "Tracker row indicates sponsorship is likely not available." };
+    default:
+      return { label: "Visa unknown", tone: "text-faint", icon: ShieldQuestion, title: "No sponsorship signal was captured on this tracker row." };
+  }
+}
 
 export function PipelineView({
   applications,
@@ -51,6 +61,9 @@ export function PipelineView({
   const pSort = params.get("sort") ?? "";
   const sortKey: SortKey = (SORT_KEYS as readonly string[]).includes(pSort) ? (pSort as SortKey) : "score";
   const sort = { key: sortKey, dir: (params.get("dir") === "1" ? 1 : -1) as 1 | -1 };
+  const [lastDiscoveryDay, setLastDiscoveryDay] = useState<string | null>(null);
+  const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const discoveryDue = lastDiscoveryDay !== todayKey;
 
   // Search stays LOCAL for snappy typing; seeded from the URL and re-synced only
   // when the URL's q changes (i.e. the assistant set it) — never per keystroke.
@@ -63,6 +76,14 @@ export function PipelineView({
       setQ(urlQ);
     }
   }, [params]);
+
+  useEffect(() => {
+    try {
+      setLastDiscoveryDay(localStorage.getItem("career-ops:last-discovery-day"));
+    } catch {
+      setLastDiscoveryDay(null);
+    }
+  }, []);
 
   const setParams = useCallback(
     (updates: Record<string, string | number | null>) => {
@@ -118,6 +139,18 @@ export function PipelineView({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 max-sm:pb-24">
+      {discoveryDue && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground">Discovery is due today.</p>
+            <p className="text-muted">Run Explore first so the pipeline is anchored to fresh roles before you sort or apply.</p>
+          </div>
+          <Link href="/explore" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
+            Run discovery
+          </Link>
+        </div>
+      )}
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl tracking-tight text-landing">Pipeline</h1>
@@ -213,22 +246,49 @@ export function PipelineView({
                     </button>
                   </th>
                 ))}
+                <th className="px-4 py-2.5 font-medium">visa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((r, i) => (
                 <tr key={`${r.n}-${i}`} className="group transition-colors hover:bg-surface/40">
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/pipeline/${r.n}`} className="flex items-center gap-2.5 transition-colors group-hover:text-brand">
-                      <CompanyLogo name={r.company} size={20} />
-                      {r.company}
-                    </Link>
+                    <div className="flex items-center gap-2.5">
+                      <Link href={`/pipeline/${r.n}`} className="inline-flex items-center gap-2 transition-colors group-hover:text-brand">
+                        <CompanyLogo name={r.company} size={20} />
+                        {r.company}
+                      </Link>
+                      {r.jobUrl && (
+                        <a
+                          href={r.jobUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand"
+                          title="Open the original job posting"
+                        >
+                          JD <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-muted">
-                    <Link href={`/pipeline/${r.n}`}>{r.role}</Link>
+                    <Link href={`/pipeline/${r.n}`} className="inline-flex items-center gap-1.5 hover:text-brand">
+                      {r.role}
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone={scoreTone(r.score)}>{r.score ? formatJobFitScore(r.score) : "—"}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const visa = sponsorshipBadge((r as typeof r & { visaSponsorship?: string }).visaSponsorship);
+                      return (
+                        <span className={cn("inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-xs font-medium", visa.tone)} title={visa.title}>
+                          <visa.icon className="size-3" />
+                          {visa.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-muted">
                     <span className="inline-flex items-center gap-1.5">

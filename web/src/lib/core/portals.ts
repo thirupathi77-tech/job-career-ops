@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import yaml from "js-yaml";
 import { careerOpsRoot } from "@/lib/career-ops";
 import { expandTargetRoles } from "@/lib/role-expansion";
+import { readProfileDoc, resolveActiveProfile } from "@/lib/profile";
 import { DEFAULT_FILTERS, cleanChips, type ExploreFilters } from "@/lib/explore";
 
 /**
@@ -95,8 +96,8 @@ export function seedExploreFilters(): { filters: ExploreFilters; seededFrom: str
   }
 
   if (filters.positive.length === 0) {
-    const profile = loadYaml("config/profile.yml");
-    const roles = (profile?.target_roles ?? {}) as Record<string, unknown>;
+    const profile = resolveActiveProfile(readProfileDoc("config/profile.yml"));
+    const roles = (profile.data.target_roles ?? {}) as Record<string, unknown>;
     const fromRoles = expandTargetRoles(listFrom([
       ...(typeof roles.primary === "string" ? [roles.primary] : []),
       ...(Array.isArray(roles.archetypes) ? roles.archetypes : []),

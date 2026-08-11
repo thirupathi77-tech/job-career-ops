@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import { Upload, FileText, Loader2, Check, AlertTriangle, Lock, ArrowRight, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
-import { cvReadiness, parseCvStream, type CvSeed } from "@/lib/cv/quality";
+import { cvReadiness, inferRoleHints, parseCvStream, type CvSeed } from "@/lib/cv/quality";
 import { DEFAULT_FILTERS, filtersToParams } from "@/lib/explore";
 
 type Phase = "input" | "parsing" | "review" | "saving" | "error";
@@ -159,7 +159,8 @@ export function CvIngest({ onSaved }: { onSaved?: () => void }) {
     // GENEROUS first scan so it never comes back empty (that would kill the wow): roles
     // only + a wide 30-day window; location stays a refinement for the deepen step, NOT a
     // hard exclude (allow=[] passes everything). Recall over precision for the first reveal.
-    const roles = seed?.roles?.length ? seed.roles : seed?.title ? [seed.title] : [];
+    const inferred = inferRoleHints(md);
+    const roles = seed?.roles?.length ? [...seed.roles, ...inferred] : seed?.title ? [seed.title, ...inferred] : inferred;
     const f = { ...DEFAULT_FILTERS, ats: [...DEFAULT_FILTERS.ats], positive: roles, sinceDays: 30 };
     const qs = filtersToParams(f);
     router.push(`/explore?${qs}${qs ? "&" : ""}run=1`);

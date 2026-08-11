@@ -1,0 +1,63 @@
+# Career-Ops Profile Configuration
+# Copy of the example profile seeded for local setup.
+
+candidate:
+  full_name: "Alex Chen"
+  email: "alex@example.com"
+  phone: "+1-555-0123"
+  wechat: ""
+  location: "Austin, TX"
+  linkedin: "linkedin.com/in/alexchen"
+  portfolio_url: "https://alexchen.dev"
+  github: "github.com/alexchen"
+  twitter: ""
+  photo: ""
+  photo_style: rounded
+
+target_roles:
+  primary:
+    - "Senior AI Engineer"
+    - "Staff ML Engineer"
+  archetypes:
+    - name: "AI/ML Engineer"
+      level: "Senior/Staff"
+      fit: "primary"
+    - name: "AI Product Manager"
+      level: "Senior"
+      fit: "secondary"
+    - name: "Solutions Architect"
+      level: "Mid-Senior"
+      fit: "adjacent"
+
+narrative:
+  headline: "ML Engineer turned AI product builder"
+  exit_story: "Built and sold my SaaS after 5 years. Now focused on applied AI at scale."
+  superpowers:
+    - "End-to-end ML pipelines"
+    - "Fast prototyping (idea to prod in 2 weeks)"
+    - "Cross-functional communication"
+
+compensation:
+  target_range: "$150K-200K"
+  currency: "USD"
+  minimum: "$120K"
+  location_flexibility: "Remote preferred, 1 week/month on-site possible"
+
+location:
+  country: "United States"
+  city: "Austin"
+  timezone: "America/Chicago"
+  visa_status: "No sponsorship needed"
+  authorized_in: ["United States"]
+  needs_sponsorship: false
+
+language:
+  output: en
+
+spend_tier: standard
+
+resumes:
+  default: "cv.md"
+
+cv:
+  output_format: "html"

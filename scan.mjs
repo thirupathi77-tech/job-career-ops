@@ -1440,6 +1440,9 @@ export function formatPipelineOffer(offer) {
   // posted:, before note:, for a stable serialization.
   const trust = formatTrustSegment(offer);
   if (trust) line = `${line} | ${trust}`;
+  if (offer.visaSponsorship === 'sponsors') line = `${line} | visa: sponsors`;
+  else if (offer.visaSponsorship === 'no-sponsorship') line = `${line} | visa: no-sponsorship`;
+  else if (offer.visaSponsorship === 'unknown') line = `${line} | visa: unknown`;
   // Optional free-text ranking signal (e.g. a curated-list flag an importer
   // attaches). Labeled — not positional like location/compensation — so it can
   // ride on any row shape (bare URL, 3-, 4-, or 5-column) without a reader

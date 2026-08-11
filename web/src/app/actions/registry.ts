@@ -48,6 +48,7 @@ export type ActionCtx = {
 };
 
 export type ProfilePatch = {
+  profileName?: string;
   name?: string;
   email?: string;
   location?: string;
@@ -64,6 +65,7 @@ function coerceProfile(raw: Record<string, unknown>): ProfilePatch {
   const out: ProfilePatch = {};
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
   const num = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : undefined);
+  out.profileName = str(raw.profileName);
   out.name = str(raw.name);
   out.email = str(raw.email);
   out.location = str(raw.location);

@@ -4,6 +4,16 @@
 
 export type CvReadiness = { scoreable: boolean; words: number; hasExperience: boolean; hasSkills: boolean; hint?: string };
 
+const ROLE_HINT_RULES: Array<{ test: RegExp; hints: string[] }> = [
+  { test: /\b(ai|ml|machine learning|llm|genai|agentic)\b/i, hints: ["AI Engineer", "ML Engineer", "LLMOps", "AI Platform Engineer"] },
+  { test: /\b(data|analytics|bi|etl|warehouse|pipeline)\b/i, hints: ["Data Engineer", "Analytics Engineer", "Data Platform Engineer"] },
+  { test: /\b(platform|infra|cloud|devops|sre|observability)\b/i, hints: ["Platform Engineer", "Infrastructure Engineer", "DevOps Engineer", "SRE"] },
+  { test: /\b(product|pm|roadmap|discovery)\b/i, hints: ["Technical Product Manager", "Product Manager"] },
+  { test: /\b(full stack|fullstack|backend|frontend|api)\b/i, hints: ["Software Engineer", "Full Stack Engineer", "Backend Engineer", "Frontend Engineer"] },
+  { test: /\b(automation|workflow|orchestration|agents?)\b/i, hints: ["Automation Engineer", "Workflow Engineer", "Systems Engineer"] },
+  { test: /\b(research|applied scientist|scientist)\b/i, hints: ["Research Scientist", "Applied Scientist", "Research Engineer"] },
+];
+
 export function cvReadiness(md: string): CvReadiness {
   const text = (md || "").trim();
   const words = text ? text.split(/\s+/).length : 0;
@@ -13,6 +23,23 @@ export function cvReadiness(md: string): CvReadiness {
   let hint: string | undefined;
   if (!scoreable) hint = words < 40 ? "That's very short — add your experience for real matches (you can save anyway)." : "Looks thin — add a role or two for better matches (you can save anyway).";
   return { scoreable, words, hasExperience, hasSkills, hint };
+}
+
+export function inferRoleHints(md: string, cap = 12): string[] {
+  const text = (md || "").toLowerCase();
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const rule of ROLE_HINT_RULES) {
+    if (!rule.test.test(text)) continue;
+    for (const hint of rule.hints) {
+      const key = hint.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(hint);
+      if (out.length >= cap) return out;
+    }
+  }
+  return out;
 }
 
 // ── CV ingest stream markers (parallel to the <<act:>>/<<offer:>> envelopes) ──

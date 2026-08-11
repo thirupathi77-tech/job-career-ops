@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, CircleHelp, Sparkles, ArrowRight } from "lucide-react";
+import { Bell, CircleHelp, Sparkles, ArrowRight, ShieldAlert } from "lucide-react";
 import { instrumentSerif } from "@/lib/fonts";
 import { HeroGlow } from "@/components/hero-glow";
 import type { Application, InboxJob } from "@/lib/career-ops";
@@ -27,12 +27,15 @@ export function TodayDashboard({
   inbox: InboxJob[];
   inBetween: boolean;
 }) {
+  const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [followups, setFollowups] = useState<FollowUp[]>([]);
   const [overdue, setOverdue] = useState(0);
   const [fresh, setFresh] = useState<DiscoveredOffer[]>([]);
   const [loadingQueues, setLoadingQueues] = useState(true);
+  const [lastDiscoveryDay, setLastDiscoveryDay] = useState<string | null>(null);
   const router = useRouter();
   const dateLabel = useMemo(() => new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }), []);
+  const discoveryDue = lastDiscoveryDay !== todayKey;
 
   const refetch = useCallback(async () => {
     setLoadingQueues(true);
@@ -52,13 +55,26 @@ export function TodayDashboard({
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
       })
-      .then((d) => setFresh(Array.isArray(d.offers) ? d.offers : []))
+      .then((d) => {
+        setFresh(Array.isArray(d.offers) ? d.offers : []);
+        setLastDiscoveryDay(todayKey);
+        try {
+          localStorage.setItem("career-ops:last-discovery-day", todayKey);
+        } catch {
+          /* ignore */
+        }
+      })
       .catch(() => {}),
     ]);
     setLoadingQueues(false);
-  }, []);
+  }, [todayKey]);
 
   useEffect(() => {
+    try {
+      setLastDiscoveryDay(localStorage.getItem("career-ops:last-discovery-day"));
+    } catch {
+      setLastDiscoveryDay(null);
+    }
     refetch();
     // A worker (evaluate/pdf) just wrote a real tracker row — refresh the server
     // snapshot (applications/inbox props) + the client loops so the freshly-scored
@@ -83,6 +99,18 @@ export function TodayDashboard({
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 max-sm:pb-24">
+      {discoveryDue && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground">Discovery is due today.</p>
+            <p className="text-muted">Run a free scan before using the pipeline so you work from the newest matches.</p>
+          </div>
+          <Link href="/explore" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
+            Run discovery
+          </Link>
+        </div>
+      )}
       <section className="dot-bg relative overflow-hidden rounded-2xl border border-border bg-surface/40 px-7 py-10 md:px-10 md:py-12">
         <HeroGlow />
         {/* Readability scrim between the animated glow (z-0) and the copy (z-10). */}
@@ -113,7 +141,7 @@ export function TodayDashboard({
             )}
           </h1>
           <p className="mt-4 max-w-xl text-sm text-muted">
-            {loadingQueues ? "Checking new matches and follow-ups…" : allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
+            {loadingQueues ? "Checking new matches and follow-ups…" : discoveryDue ? "Run discovery first, then work the pipeline from fresh matches." : allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition hover:bg-brand-200 max-sm:min-h-[44px]">

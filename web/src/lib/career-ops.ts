@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { atomicWrite } from "@/lib/core/safe-write";
 import { parseApplications } from "@/lib/tracker-table.mjs";
+import { parseReport } from "@/lib/format";
 
 /**
  * Resolve the career-ops "home" — the directory holding the user's sibling
@@ -45,7 +46,8 @@ function read(rel: string): string | null {
   }
 }
 
-export type InboxJob = { url: string; company: string; role: string; location?: string; compensation?: string; done: boolean; postedAt?: string };
+export type SponsorshipSignal = "sponsors" | "no-sponsorship" | "unknown";
+export type InboxJob = { url: string; company: string; role: string; location?: string; compensation?: string; done: boolean; postedAt?: string; visaSponsorship?: SponsorshipSignal };
 
 /** A pipeline-row segment like `posted: 2026-07-14`, `trust: 62 stale` or
  *  `note: …` — the core appends these LABELED segments after whatever
@@ -79,6 +81,7 @@ export function readInbox(): InboxJob[] {
     }
     if (parts.length < 3 || !parts[0]) continue; // need at least url | company | role
     const posted = labels.get("posted");
+    const visa = labels.get("visa");
     jobs.push({
       done: m[1].toLowerCase() === "x",
       url: parts[0],
@@ -89,6 +92,7 @@ export function readInbox(): InboxJob[] {
       // the row's own posting date (scan.mjs `posted:` label) — a more direct
       // freshness signal than the scan-history join, which stays as fallback
       postedAt: posted && /^\d{4}-\d{2}-\d{2}$/.test(posted) ? posted : undefined,
+      visaSponsorship: visa === "sponsors" || visa === "no-sponsorship" || visa === "unknown" ? visa : undefined,
     });
   }
   return jobs;
@@ -132,6 +136,7 @@ export type Application = {
   pdf: string;
   report: string;
   notes: string;
+  jobUrl?: string;
 };
 
 /**
@@ -144,7 +149,15 @@ export type Application = {
 export function readApplications(): Application[] {
   const md = read("data/applications.md");
   if (!md) return [];
-  return parseApplications(md, careerOpsRoot());
+  const apps = parseApplications(md, careerOpsRoot());
+  return apps.map((app) => {
+    if (app.jobUrl) return app;
+    const report = readReport(app.n);
+    if (!report) return app;
+    const url = parseReport(report.content).fields.find((f) => f.label === "URL")?.value?.trim();
+    if (!url || !/^https?:\/\//i.test(url)) return app;
+    return { ...app, jobUrl: url };
+  });
 }
 
 /**

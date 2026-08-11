@@ -9,6 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
 import { cn } from "@/lib/cn";
 import { formatJobFitScore } from "@/lib/format";
+import { ShieldCheck, ShieldAlert, ShieldQuestion } from "lucide-react";
+
+function sponsorshipBadge(sig?: string) {
+  switch (sig) {
+    case "sponsors":
+      return { label: "Visa sponsorship likely", tone: "text-emerald-600 dark:text-emerald-400", icon: ShieldCheck, title: "Row indicates sponsorship is likely available." };
+    case "no-sponsorship":
+      return { label: "No sponsorship signal", tone: "text-amber-600 dark:text-amber-300", icon: ShieldAlert, title: "Row indicates sponsorship is likely not available." };
+    default:
+      return { label: "Visa unknown", tone: "text-faint", icon: ShieldQuestion, title: "No sponsorship signal was captured on this row." };
+  }
+}
 
 export type RowScore = { score: number | null; tone: "good" | "warn" | "bad" | "muted"; jobId: string; running: boolean };
 
@@ -47,6 +59,7 @@ export function TriageRow({
 }) {
   const ago = agoLabel(age);
   const evaluated = !!scored && (scored.running || scored.score != null);
+  const visa = sponsorshipBadge(job.visaSponsorship);
 
   return (
     <li
@@ -76,6 +89,10 @@ export function TriageRow({
           {job.location && <span className="truncate">{job.location}</span>}
           {source && <span className="rounded bg-surface-hover px-1 py-px font-medium text-muted">{ATS_LABEL[source]}</span>}
           {ago && <span>{ago}</span>}
+          <span className={cn("inline-flex items-center gap-1 rounded border border-border px-1.5 py-px font-medium", visa.tone)} title={visa.title}>
+            <visa.icon className="size-3" />
+            {visa.label}
+          </span>
           {/* 🔴 CRUDA: honest "not scored" — no fabricated match%. */}
           {!evaluated && <span className="italic text-muted">not scored</span>}
         </p>

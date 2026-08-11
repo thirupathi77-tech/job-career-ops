@@ -11,6 +11,7 @@ import { ScoreMethodology } from "@/components/score-methodology";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { ApplyButton } from "@/components/apply-button";
 import { DeleteFromTracker } from "@/components/delete-from-tracker";
+import { JdVerifier } from "@/components/jd-verifier";
 
 // Progressive disclosure of the report. The core writes prose blocks
 // "## F) Verdict (lead)", "## A) Role Summary", "## B) Match with CV", then
@@ -148,6 +149,8 @@ export function ReportView({
             )}
           </div>
         )}
+
+        {url && url.startsWith("http") && <JdVerifier url={url} />}
       </header>
 
       {report ? (

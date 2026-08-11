@@ -1,5 +1,5 @@
 import { fillSession, handoffSession, getSession } from "@/lib/apply/session";
-import { resolveTailoredCv, companyFromTitle } from "@/lib/apply/cv";
+import { resolveProfileSelectedCv, companyFromTitle } from "@/lib/apply/cv";
 import type { ApplyField } from "@/lib/apply/extract";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   // Resolve the tailored CV server-side (never trust a client path): by the
   // offer's company if known, else best-effort from the form title.
   const session = getSession(sessionId);
-  const cvPath = resolveTailoredCv(company) ?? resolveTailoredCv(companyFromTitle(session?.title)) ?? undefined;
+  const cvPath = resolveProfileSelectedCv(session?.title, company) ?? resolveProfileSelectedCv(session?.title, companyFromTitle(session?.title)) ?? undefined;
 
   try {
     const result = await fillSession(sessionId, answers, fields, cvPath);

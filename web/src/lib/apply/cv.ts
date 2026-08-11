@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { careerOpsRoot } from "@/lib/career-ops";
+import { readProfileDoc, resolveActiveProfile, isObj } from "@/lib/profile";
 
 /**
  * Locate the tailored CV PDF the real `pdf` mode wrote to output/ for a given
@@ -30,6 +31,40 @@ export function resolveTailoredCv(company?: string): string | null {
   if (!matches.length) return null;
   matches.sort((a, b) => fs.statSync(path.join(dir, b)).mtimeMs - fs.statSync(path.join(dir, a)).mtimeMs);
   return path.join(dir, matches[0]);
+}
+
+function resolveProfileResumePath(profilePath: string): string | null {
+  const p = profilePath.trim();
+  if (!p) return null;
+  const abs = path.isAbsolute(p) ? p : path.join(careerOpsRoot(), p);
+  try {
+    return fs.existsSync(abs) ? abs : null;
+  } catch {
+    return null;
+  }
+}
+
+function matchVariant(variants: unknown, title?: string): string | null {
+  if (!Array.isArray(variants)) return null;
+  const t = (title ?? "").toLowerCase();
+  for (const item of variants) {
+    if (!isObj(item)) continue;
+    const match = typeof item.match === "string" ? item.match.trim().toLowerCase() : "";
+    const file = typeof item.file === "string" ? item.file.trim() : "";
+    if (match && file && t.includes(match.toLowerCase())) return file;
+  }
+  return null;
+}
+
+export function resolveProfileSelectedCv(title?: string, company?: string): string | null {
+  const profile = resolveActiveProfile(readProfileDoc("config/profile.yml"));
+  const root = profile.data;
+  const resumes = isObj(root.resumes) ? root.resumes : {};
+  const variant = matchVariant(resumes.variants, title ?? company);
+  const chosen = variant || (typeof resumes.default === "string" ? resumes.default.trim() : "");
+  const fromProfile = resolveProfileResumePath(chosen);
+  if (fromProfile) return fromProfile;
+  return resolveTailoredCv(company);
 }
 
 /**
