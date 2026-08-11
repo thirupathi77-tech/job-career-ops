@@ -103,6 +103,31 @@ Register-ScheduledTask -TaskName "career-ops scan" -Action $action -Trigger $tri
 After any of these, new postings land in `data/pipeline.md` under `## Pending` on
 each run. Next you decide which are worth your attention — cheaply.
 
+### Opinionated morning refresh
+
+If you want the app ready before you open it, use the repo-local morning
+refresh instead of wiring the steps by hand:
+
+- [automation/daily-morning.sh](../automation/daily-morning.sh) runs the scan,
+  then `npm run or:pipeline`
+- [automation/make-morning-plist.sh](../automation/make-morning-plist.sh)
+  generates the launchd plist from `MORNING_HOUR` / `MORNING_MINUTE`
+- [automation/io.career-ops.daily-refresh.plist](../automation/io.career-ops.daily-refresh.plist)
+  is the generated macOS schedule file
+
+Install on macOS:
+
+```bash
+./automation/make-morning-plist.sh 07:00
+cp automation/io.career-ops.daily-refresh.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/io.career-ops.daily-refresh.plist
+```
+
+Change the `HH:MM` argument and rerun the generator if you want a different
+time. You can still override with `MORNING_HOUR` / `MORNING_MINUTE` if you
+prefer environment variables. The plist sets `CAREER_OPS_ROOT` automatically so
+the script can find the repo.
+
 ---
 
 ## 2. Triage the queue

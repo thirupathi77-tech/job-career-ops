@@ -181,6 +181,7 @@ export function ApplyView() {
                   field={f}
                   value={a.answers[f.id] ?? ""}
                   needs={!!a.meta[f.id]?.needsConfirmation}
+                  source={a.meta[f.id]?.source}
                   index={i}
                   drafting={prefilling}
                   onChange={(v) => a.setAnswer(f.id, v)}
@@ -409,10 +410,19 @@ function FieldSkeleton() {
   );
 }
 
+type Source = "profile" | "cv" | "profile+cv" | "confirm";
+
+function sourceLabel(source?: Source) {
+  if (!source) return "";
+  if (source === "profile+cv") return "profile + cv";
+  return source;
+}
+
 function FieldRow({
   field: f,
   value,
   needs,
+  source,
   index,
   drafting,
   onChange,
@@ -420,6 +430,7 @@ function FieldRow({
   field: ApplyField;
   value: string;
   needs: boolean;
+  source?: Source;
   index: number;
   drafting: boolean;
   onChange: (v: string) => void;
@@ -450,6 +461,11 @@ function FieldRow({
       <label className="mb-1.5 flex items-center gap-1 text-sm font-medium">
         {f.label || <span className="text-faint">Untitled field</span>}
         {f.required && <Asterisk className="size-3 text-brand" />}
+        {source && (
+          <span className="ml-1 rounded bg-surface/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-faint">
+            {sourceLabel(source)}
+          </span>
+        )}
         {needs && <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">you confirm</span>}
       </label>
       {writing ? (

@@ -5,7 +5,8 @@ import type { ApplyField } from "@/lib/apply/extract";
 import type { ApplyIssue, DriveStep } from "@/lib/apply/issue";
 
 export type FillStep = { fieldId: string; label: string; ok: boolean; thumb?: string };
-type Meta = { needsConfirmation?: boolean };
+type Source = "profile" | "cv" | "profile+cv" | "confirm";
+type Meta = { needsConfirmation?: boolean; source?: Source };
 type Status = "idle" | "opening" | "driving" | "prefilling" | "ready" | "filling" | "done" | "error";
 
 type ApplyCtx = {
@@ -191,12 +192,12 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
     setStatus("prefilling");
     setError("");
     setPrefillLog([]);
-    const applyAnswers = (raw: Record<string, { value?: string; needs_confirmation?: boolean }>) => {
+    const applyAnswers = (raw: Record<string, { value?: string; needs_confirmation?: boolean; source?: Source }>) => {
       const a: Record<string, string> = {};
       const m: Record<string, Meta> = {};
       for (const [id, v] of Object.entries(raw)) {
         a[id] = v?.value ?? "";
-        m[id] = { needsConfirmation: !!v?.needs_confirmation };
+        m[id] = { needsConfirmation: !!v?.needs_confirmation, source: v?.source };
       }
       setAnswers(a);
       setMeta(m);
@@ -222,7 +223,7 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
           const line = buf.slice(0, nl).trim();
           buf = buf.slice(nl + 1);
           if (!line) continue;
-          let ev: { t?: string; m?: string; el?: number; raw?: string; answers?: Record<string, { value?: string; needs_confirmation?: boolean }>; count?: number; truncated?: boolean };
+          let ev: { t?: string; m?: string; el?: number; raw?: string; answers?: Record<string, { value?: string; needs_confirmation?: boolean; source?: Source }>; count?: number; truncated?: boolean };
           try {
             ev = JSON.parse(line);
           } catch {

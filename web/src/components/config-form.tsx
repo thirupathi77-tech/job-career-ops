@@ -22,8 +22,51 @@ type ProfileSummary = {
 };
 
 type Mode = "cli" | "key" | "manual";
+type ProfileTab = "basics" | "matching" | "prefills" | "language";
+type ScheduleType = "daily" | "weekly" | "twice_weekly" | "thrice_weekly" | "every_n_days" | "custom_weekdays";
 
 const PROVIDERS: ProviderId[] = ["default", "anthropic", "openai", "google", "kimi", "openrouter"];
+const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "CAD", "AUD", "INR", "SGD", "CHF"];
+const REMOTE_OPTIONS = ["Remote preferred", "Hybrid", "On-site", "Open to all"];
+const OUTPUT_LANGUAGE_OPTIONS = ["en", "de", "fr", "es", "pt", "ar", "ja", "hi"];
+const TIMEZONE_OPTIONS = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Paris",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+];
+const ROLE_SUGGESTIONS = [
+  "Data Engineer",
+  "Senior Data Engineer",
+  "Staff Data Engineer",
+  "Analytics Engineer",
+  "ETL Developer",
+  "Data Platform Engineer",
+  "AI Engineer",
+  "Senior AI Engineer",
+  "ML Engineer",
+  "Senior ML Engineer",
+  "Platform Engineer",
+  "Backend Engineer",
+  "Full Stack Engineer",
+  "Solutions Architect",
+  "Research Engineer",
+];
+const WEEKDAYS = [
+  { id: 1, label: "Mon" },
+  { id: 2, label: "Tue" },
+  { id: 3, label: "Wed" },
+  { id: 4, label: "Thu" },
+  { id: 5, label: "Fri" },
+  { id: 6, label: "Sat" },
+  { id: 7, label: "Sun" },
+];
 
 const STORAGE_KEY = "career-ops:config";
 
@@ -38,8 +81,23 @@ export function ConfigForm() {
   const [profileName, setProfileName] = useState("");
   const [profileBusy, setProfileBusy] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [preferredName, setPreferredName] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [github, setGithub] = useState("");
+  const [portfolio, setPortfolio] = useState("");
   const [location, setLocation] = useState("");
+  const [address, setAddress] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [currentCompany, setCurrentCompany] = useState("");
+  const [currentTitle, setCurrentTitle] = useState("");
+  const [workStyle, setWorkStyle] = useState("");
+  const [relocation, setRelocation] = useState("");
+  const [jobSearchLocation, setJobSearchLocation] = useState("");
   const [roles, setRoles] = useState("");
   const [compMin, setCompMin] = useState("");
   const [compMax, setCompMax] = useState("");
@@ -58,6 +116,15 @@ export function ConfigForm() {
   const [variantRoleTitle, setVariantRoleTitle] = useState("");
   const [variantStatus, setVariantStatus] = useState("");
   const [keyStatus, setKeyStatus] = useState<{ openai: boolean; anthropic: boolean; fallbackCli: string; envLocalExists: boolean } | null>(null);
+  const [morningTime, setMorningTime] = useState("07:00");
+  const [scheduleType, setScheduleType] = useState<ScheduleType>("daily");
+  const [everyDays, setEveryDays] = useState("2");
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3, 5]);
+  const [morningStatus, setMorningStatus] = useState("");
+  const [morningBusy, setMorningBusy] = useState(false);
+  const [morningPlistPath, setMorningPlistPath] = useState("");
+  const [profileTab, setProfileTab] = useState<ProfileTab>("basics");
+  const [roleQuery, setRoleQuery] = useState("");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -71,8 +138,21 @@ export function ConfigForm() {
       ? (obj.compensation as Record<string, unknown>)
       : {};
     setFullName(typeof candidate.full_name === "string" ? candidate.full_name : "");
+    setPreferredName(typeof candidate.preferred_name === "string" ? candidate.preferred_name : "");
+    setPronouns(typeof candidate.pronouns === "string" ? candidate.pronouns : "");
     setEmail(typeof candidate.email === "string" ? candidate.email : "");
+    setPhone(typeof candidate.phone === "string" ? candidate.phone : "");
+    setLinkedin(typeof candidate.linkedin === "string" ? candidate.linkedin : "");
+    setGithub(typeof candidate.github === "string" ? candidate.github : "");
+    setPortfolio(typeof candidate.portfolio === "string" ? candidate.portfolio : "");
     setLocation(typeof candidate.location === "string" ? candidate.location : "");
+    setAddress(typeof candidate.address === "string" ? candidate.address : "");
+    setStreetAddress(typeof candidate.street_address === "string" ? candidate.street_address : "");
+    setAddressLine2(typeof candidate.address_line2 === "string" ? candidate.address_line2 : "");
+    setZipCode(typeof candidate.postal_code === "string" ? candidate.postal_code : "");
+    setCurrentCompany(typeof candidate.current_company === "string" ? candidate.current_company : "");
+    setCurrentTitle(typeof candidate.current_title === "string" ? candidate.current_title : "");
+    setWorkStyle(typeof obj.work_style === "string" ? obj.work_style : "");
     setRoles(Array.isArray(targetRoles.primary) ? targetRoles.primary.filter((v): v is string => typeof v === "string").join("\n") : "");
     const range = typeof compensation.target_range === "string" ? compensation.target_range : "";
     const [min = "", max = ""] = range.split("-").map((v) => v.trim());
@@ -87,6 +167,8 @@ export function ConfigForm() {
     setVisaStatus(typeof loc.visa_status === "string" ? loc.visa_status : "");
     setAuthorizedIn(Array.isArray(loc.authorized_in) ? loc.authorized_in.filter((v): v is string => typeof v === "string").join("\n") : "");
     setNeedsSponsorship(typeof loc.needs_sponsorship === "boolean" ? loc.needs_sponsorship : false);
+    setRelocation(typeof loc.relocation === "string" ? loc.relocation : "");
+    setJobSearchLocation(typeof loc.job_search_location === "string" ? loc.job_search_location : "");
     const lang = obj.language && typeof obj.language === "object" && !Array.isArray(obj.language) ? (obj.language as Record<string, unknown>) : {};
     setOutputLanguage(typeof lang.output === "string" ? lang.output : "en");
     setModesDir(typeof lang.modes_dir === "string" ? lang.modes_dir : "");
@@ -175,6 +257,23 @@ export function ConfigForm() {
       })
       .catch(() => {
         setKeyStatus(null);
+    });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/automation/morning")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d === "object" && typeof (d as Record<string, unknown>).time === "string") {
+          setMorningTime(String((d as Record<string, unknown>).time));
+          if (typeof (d as Record<string, unknown>).scheduleType === "string") {
+            setScheduleType((d as Record<string, unknown>).scheduleType as ScheduleType);
+          }
+          setMorningPlistPath(typeof (d as Record<string, unknown>).plistPath === "string" ? String((d as Record<string, unknown>).plistPath) : "");
+        }
+      })
+      .catch(() => {
+        /* ignore */
       });
   }, []);
 
@@ -199,8 +298,23 @@ export function ConfigForm() {
       const payload: Record<string, unknown> = {
         profileName: activeProfile,
         name: fullName.trim(),
+        preferredName: preferredName.trim(),
+        pronouns: pronouns.trim(),
         email: email.trim(),
+        phone: phone.trim(),
+        linkedin: linkedin.trim(),
+        github: github.trim(),
+        portfolio: portfolio.trim(),
         location: location.trim(),
+        address: address.trim(),
+        streetAddress: streetAddress.trim(),
+        addressLine2: addressLine2.trim(),
+        postalCode: zipCode.trim(),
+        currentCompany: currentCompany.trim(),
+        currentTitle: currentTitle.trim(),
+        workStyle: workStyle.trim(),
+        relocation: relocation.trim(),
+        jobSearchLocation: jobSearchLocation.trim(),
         roles: roles
           .split(/\r?\n|,/)
           .map((s) => s.trim())
@@ -311,6 +425,70 @@ export function ConfigForm() {
     }
   }
 
+  const roleSuggestionMatches = (() => {
+    const q = roleQuery.trim().toLowerCase();
+    if (!q) return ROLE_SUGGESTIONS.slice(0, 6);
+    return ROLE_SUGGESTIONS.filter((role) => role.toLowerCase().includes(q)).slice(0, 6);
+  })();
+
+  function appendRoleSuggestion(role: string) {
+    const current = roles.trim();
+    const lines = current ? current.split(/\r?\n/).map((s) => s.trim()).filter(Boolean) : [];
+    if (!lines.some((line) => line.toLowerCase() === role.toLowerCase())) {
+      lines.push(role);
+    }
+    setRoles(lines.join("\n"));
+    setRoleQuery("");
+  }
+
+  function describeNextRun(time: string): string {
+    const match = time.trim().match(/^(\d{2}):(\d{2})$/);
+    if (!match) return time;
+    const hour = Number.parseInt(match[1], 10);
+    const minute = Number.parseInt(match[2], 10);
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(hour, minute, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    const diffMinutes = Math.max(1, Math.round((next.getTime() - now.getTime()) / 60000));
+    if (diffMinutes < 60) return `${time} (in about ${diffMinutes} minute${diffMinutes === 1 ? "" : "s"})`;
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    if (mins === 0) return `${time} (in about ${hours} hour${hours === 1 ? "" : "s"})`;
+    return `${time} (in about ${hours} hour${hours === 1 ? "" : "s"} ${mins} minute${mins === 1 ? "" : "s"})`;
+  }
+
+  async function saveMorningSchedule() {
+    setError("");
+    setMorningBusy(true);
+    setMorningStatus("");
+    try {
+      const r = await fetch("/api/automation/morning", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          time: morningTime,
+          scheduleType,
+          everyDays: Number.parseInt(everyDays, 10) || 2,
+          weekdays: selectedWeekdays,
+        }),
+      });
+      const d = (await r.json().catch(() => null)) as { error?: string; time?: string } | null;
+      if (!r.ok) {
+        throw new Error(d?.error ?? `Could not update morning schedule (${r.status}).`);
+      }
+      setMorningTime(d?.time ?? morningTime);
+      setMorningStatus(`Daily schedule set to run at ${describeNextRun(d?.time ?? morningTime)}.`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setMorningStatus("");
+      setError(e instanceof Error ? e.message : "Could not update morning schedule.");
+    } finally {
+      setMorningBusy(false);
+    }
+  }
+
   const installed = clis?.filter((c) => c.installed) ?? [];
 
   return (
@@ -399,114 +577,275 @@ export function ConfigForm() {
       <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Active Profile Data</label>
+            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Morning Schedule</label>
             <p className="mt-1 text-sm text-muted">
-              Edit the fields used by matching and prefills for <span className="font-medium text-foreground">{activeProfile}</span>.
+              Set the daily refresh time from the UI. This updates the local launchd plist used by the morning pipeline.
             </p>
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <Field label="Full name" value={fullName} onChange={setFullName} placeholder="Jane Smith" />
-          <Field label="Email" value={email} onChange={setEmail} placeholder="jane@example.com" />
-          <Field label="Location" value={location} onChange={setLocation} placeholder="San Francisco, CA" />
-          <Field label="Remote preference" value={remote} onChange={setRemote} placeholder="Remote preferred" />
-          <Field label="Comp min" value={compMin} onChange={setCompMin} placeholder="120000" />
-          <Field label="Comp max" value={compMax} onChange={setCompMax} placeholder="180000" />
-          <Field label="Currency" value={currency} onChange={setCurrency} placeholder="USD" />
-          <Field label="Country" value={country} onChange={setCountry} placeholder="United States" />
-          <Field label="City" value={city} onChange={setCity} placeholder="San Francisco" />
-          <Field label="Timezone" value={timezone} onChange={setTimezone} placeholder="America/Chicago" />
-          <Field label="Visa status" value={visaStatus} onChange={setVisaStatus} placeholder="No sponsorship needed" />
-          <Field label="Output language" value={outputLanguage} onChange={setOutputLanguage} placeholder="en" />
-          <Field label="Modes dir" value={modesDir} onChange={setModesDir} placeholder="modes/de" />
-          <Field label="Default resume" value={defaultResume} onChange={setDefaultResume} placeholder="cv-person-1.pdf" />
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Target roles</label>
-            <textarea
-              value={roles}
-              onChange={(e) => setRoles(e.target.value)}
-              placeholder={"Senior AI Engineer\nStaff ML Engineer"}
-              rows={4}
-              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Run at</label>
+            <input
+              type="time"
+              value={morningTime}
+              onChange={(e) => setMorningTime(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand/50"
             />
-            <p className="mt-1 text-xs text-faint">One role per line or comma-separated. These seed matching and search.</p>
           </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Role resume variants</label>
-            <textarea
-              value={roleResumes}
-              onChange={(e) => setRoleResumes(e.target.value)}
-              placeholder={"Data Engineer|cv-person-1-data.pdf\nETL Developer|cv-person-1-etl.pdf"}
-              rows={4}
-              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
-            />
-            <p className="mt-1 text-xs text-faint">Use `role title|relative-or-absolute-pdf-path` one per line.</p>
-          </div>
-          <div className="sm:col-span-2 rounded-xl border border-border bg-surface/30 p-3">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-              Generate variant
-            </label>
-            <p className="mb-2 text-xs text-faint">
-              Create a new resume variant from the active profile for an accepted role, then register it automatically.
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={variantRoleTitle}
-                onChange={(e) => setVariantRoleTitle(e.target.value)}
-                placeholder="Senior Data Engineer"
-                className="min-w-0 flex-1 rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
-              />
-              <button
-                type="button"
-                onClick={generateVariant}
-                disabled={!variantRoleTitle.trim()}
-                className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60 max-sm:min-h-[44px]"
-              >
-                Create role variant
-              </button>
-            </div>
-            {variantStatus && <p className="mt-2 text-xs text-faint">{variantStatus}</p>}
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-              Authorized in
-            </label>
-            <textarea
-              value={authorizedIn}
-              onChange={(e) => setAuthorizedIn(e.target.value)}
-              placeholder={"United States\nCanada"}
-              rows={3}
-              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
-            />
-            <p className="mt-1 text-xs text-faint">Countries/regions where you already have work authorization.</p>
+          <div className="min-w-0 flex-1">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Schedule type</label>
+            <select
+              value={scheduleType}
+              onChange={(e) => setScheduleType(e.target.value as ScheduleType)}
+              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand/50"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="twice_weekly">Twice weekly</option>
+              <option value="thrice_weekly">Thrice weekly</option>
+              <option value="every_n_days">Every 2 days</option>
+              <option value="custom_weekdays">Custom weekdays</option>
+            </select>
           </div>
           <button
             type="button"
-            onClick={() => setNeedsSponsorship((v) => !v)}
-            role="switch"
-            aria-checked={needsSponsorship}
-            className="sm:col-span-2 flex items-center justify-between gap-4 rounded-xl border border-border bg-surface/50 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
+            onClick={saveMorningSchedule}
+            disabled={morningBusy || !morningTime}
+            className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60 max-sm:min-h-[44px]"
           >
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-foreground">Needs sponsorship</span>
-              <span className="mt-0.5 block text-xs text-faint">
-                Turn this on if you need employer sponsorship outside your authorized countries.
-              </span>
-            </span>
-            <span
-              className={cn(
-                "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-                needsSponsorship ? "bg-brand" : "bg-surface-hover",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform",
-                  needsSponsorship ? "translate-x-[1.375rem]" : "translate-x-0.5",
-                )}
-              />
-            </span>
+            {morningBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+            Save schedule
           </button>
+        </div>
+        {scheduleType === "every_n_days" ? (
+          <div className="mt-3 max-w-xs">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Every N days</label>
+            <input
+              type="number"
+              min={2}
+              value={everyDays}
+              onChange={(e) => setEveryDays(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand/50"
+            />
+          </div>
+        ) : null}
+        {(scheduleType === "weekly" || scheduleType === "twice_weekly" || scheduleType === "thrice_weekly" || scheduleType === "custom_weekdays") ? (
+          <div className="mt-3">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Weekdays</label>
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAYS.map((day) => {
+                const active = selectedWeekdays.includes(day.id);
+                return (
+                  <button
+                    key={day.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedWeekdays((curr) =>
+                        curr.includes(day.id) ? curr.filter((d) => d !== day.id) : [...curr, day.id].sort(),
+                      );
+                    }}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                      active ? "border-brand/50 bg-brand-soft text-foreground" : "border-border bg-surface/60 text-muted hover:bg-surface-hover hover:text-foreground",
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-faint">
+              {scheduleType === "weekly" ? "Pick one day." : scheduleType === "twice_weekly" ? "Pick two days." : scheduleType === "thrice_weekly" ? "Pick three days." : "Pick any days you want."}
+            </p>
+          </div>
+        ) : null}
+        <p className="mt-2 text-xs text-faint">
+          The saved schedule is read back from the plist whenever you reopen the app.
+        </p>
+        <div className="mt-3 rounded-xl border border-border bg-surface/30 p-3 text-xs text-muted">
+          <p className="font-medium text-foreground">Saved schedule</p>
+          {morningPlistPath ? <p className="mt-1 text-faint">Plist: automation/io.career-ops.daily-refresh.plist</p> : null}
+        </div>
+        {morningStatus && <p className="mt-2 text-xs text-emerald-500">{morningStatus}</p>}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Profile</label>
+            <p className="mt-1 text-sm text-muted">
+              Edit the active profile for <span className="font-medium text-foreground">{activeProfile}</span>.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2">
+            <TabButton active={profileTab === "basics"} onClick={() => setProfileTab("basics")} label="Basics" />
+            <TabButton active={profileTab === "matching"} onClick={() => setProfileTab("matching")} label="Matching" />
+            <TabButton active={profileTab === "prefills"} onClick={() => setProfileTab("prefills")} label="Prefills" />
+            <TabButton active={profileTab === "language"} onClick={() => setProfileTab("language")} label="Language" />
+          </div>
+
+          <div className="mt-4 rounded-xl border border-border bg-surface/30 p-4">
+            {profileTab === "basics" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Full name" required value={fullName} onChange={setFullName} placeholder="Jane Smith" />
+                <Field label="Preferred name" value={preferredName} onChange={setPreferredName} placeholder="Jane" />
+                <Field label="Pronouns" value={pronouns} onChange={setPronouns} placeholder="she/her" />
+                <Field label="Email" required value={email} onChange={setEmail} placeholder="jane@example.com" />
+                <Field label="Phone" required value={phone} onChange={setPhone} placeholder="+1 555 123 4567" />
+                <Field label="LinkedIn" required value={linkedin} onChange={setLinkedin} placeholder="https://linkedin.com/in/you" />
+                <Field label="GitHub" value={github} onChange={setGithub} placeholder="https://github.com/you" />
+                <Field label="Portfolio" value={portfolio} onChange={setPortfolio} placeholder="https://your-site.com" />
+                <Field label="Location" required value={location} onChange={setLocation} placeholder="San Francisco, CA" />
+                <Field label="Address" value={address} onChange={setAddress} placeholder="City, State" />
+                <Field label="Street address" value={streetAddress} onChange={setStreetAddress} placeholder="123 Main St" />
+                <Field label="Address line 2" value={addressLine2} onChange={setAddressLine2} placeholder="Apt 4B" />
+                <Field label="Zip code" required value={zipCode} onChange={setZipCode} placeholder="94105" />
+                <Field label="Current company" value={currentCompany} onChange={setCurrentCompany} placeholder="Acme Inc." />
+                <Field label="Current title" required value={currentTitle} onChange={setCurrentTitle} placeholder="Senior Data Engineer" />
+                <SelectField label="Work style" required value={workStyle} onChange={setWorkStyle} options={["Remote", "Hybrid", "On-site", "Flexible"]} placeholder="Remote" />
+                <SelectField label="Relocation" required value={relocation} onChange={setRelocation} options={["Open to relocate", "Not open to relocate", "Willing if needed"]} placeholder="Open to relocate" />
+                <Field label="Job search location" value={jobSearchLocation} onChange={setJobSearchLocation} placeholder="United States" />
+                <SelectField label="Remote preference" value={remote} onChange={setRemote} options={REMOTE_OPTIONS} placeholder="Remote preferred" />
+                <Field label="Comp min" value={compMin} onChange={setCompMin} placeholder="120000" />
+                <Field label="Comp max" value={compMax} onChange={setCompMax} placeholder="180000" />
+                <SelectField label="Currency" value={currency} onChange={setCurrency} options={CURRENCY_OPTIONS} placeholder="USD" />
+                <Field label="Default resume" value={defaultResume} onChange={setDefaultResume} placeholder="cv-person-1.pdf" />
+              </div>
+            )}
+
+            {profileTab === "matching" && (
+              <div className="grid gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Target roles</label>
+                  <input
+                    value={roleQuery}
+                    onChange={(e) => setRoleQuery(e.target.value)}
+                    placeholder="Search roles, e.g. Data"
+                    className="mb-2 w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+                  />
+                  <textarea
+                    value={roles}
+                    onChange={(e) => setRoles(e.target.value)}
+                    placeholder={"Senior AI Engineer\nStaff ML Engineer"}
+                    rows={4}
+                    className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+                  />
+                  <p className="mt-1 text-xs text-faint">One role per line or comma-separated. These seed matching and search.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {roleSuggestionMatches.map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => appendRoleSuggestion(role)}
+                        className="rounded-full border border-border bg-surface/60 px-3 py-1.5 text-xs text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                      >
+                        {role}
+                      </button>
+                    ))}
+                  </div>
+                  {roleQuery.trim() && roleSuggestionMatches.length === 0 ? (
+                    <p className="mt-2 text-xs text-faint">No close matches. Try a broader term.</p>
+                  ) : null}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Role resume variants</label>
+                    <textarea
+                      value={roleResumes}
+                      onChange={(e) => setRoleResumes(e.target.value)}
+                      placeholder={"Data Engineer|cv-person-1-data.pdf\nETL Developer|cv-person-1-etl.pdf"}
+                      rows={4}
+                      className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+                    />
+                    <p className="mt-1 text-xs text-faint">Use `role title|relative-or-absolute-pdf-path` one per line.</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-surface/30 p-3">
+                    <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Generate variant</label>
+                    <p className="mb-2 text-xs text-faint">
+                      Create a new resume variant from the active profile for an accepted role, then register it automatically.
+                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        value={variantRoleTitle}
+                        onChange={(e) => setVariantRoleTitle(e.target.value)}
+                        placeholder="Senior Data Engineer"
+                        className="min-w-0 flex-1 rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={generateVariant}
+                        disabled={!variantRoleTitle.trim()}
+                        className="inline-flex items-center justify-center rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60 max-sm:min-h-[44px]"
+                      >
+                        Create role variant
+                      </button>
+                    </div>
+                    {variantStatus && <p className="mt-2 text-xs text-faint">{variantStatus}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {profileTab === "prefills" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Country" required value={country} onChange={setCountry} placeholder="United States" />
+                <Field label="City" value={city} onChange={setCity} placeholder="San Francisco" />
+                <SelectField label="Timezone" value={timezone} onChange={setTimezone} options={TIMEZONE_OPTIONS} placeholder="America/Chicago" />
+                <Field label="Visa status" value={visaStatus} onChange={setVisaStatus} placeholder="No sponsorship needed" />
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                    Authorized in
+                  </label>
+                  <textarea
+                    value={authorizedIn}
+                    onChange={(e) => setAuthorizedIn(e.target.value)}
+                    placeholder={"United States\nCanada"}
+                    rows={3}
+                    className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+                  />
+                  <p className="mt-1 text-xs text-faint">Countries/regions where you already have work authorization.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNeedsSponsorship((v) => !v)}
+                  role="switch"
+                  aria-checked={needsSponsorship}
+                  className="sm:col-span-2 flex items-center justify-between gap-4 rounded-xl border border-border bg-surface/50 px-4 py-3 text-left transition-colors hover:bg-surface-hover"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">Needs sponsorship</span>
+                    <span className="mt-0.5 block text-xs text-faint">
+                      Turn this on if you need employer sponsorship outside your authorized countries.
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                      needsSponsorship ? "bg-brand" : "bg-surface-hover",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform",
+                        needsSponsorship ? "translate-x-[1.375rem]" : "translate-x-0.5",
+                      )}
+                    />
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {profileTab === "language" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SelectField label="Output language" required value={outputLanguage} onChange={setOutputLanguage} options={OUTPUT_LANGUAGE_OPTIONS} placeholder="en" />
+                <Field label="Modes dir" value={modesDir} onChange={setModesDir} placeholder="modes/de" />
+              </div>
+            )}
+          </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
@@ -785,20 +1124,50 @@ function ModeCard({
   );
 }
 
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-4 py-2 text-sm transition-colors max-sm:min-h-[44px]",
+        active
+          ? "border-brand/50 bg-brand-soft text-foreground"
+          : "border-border bg-surface/60 text-muted hover:bg-surface-hover hover:text-foreground",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 function Field({
   label,
+  required,
   value,
   onChange,
   placeholder,
 }: {
   label: string;
+  required?: boolean;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">{label}</label>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+        {label}
+        {required ? <span className="text-brand"> *</span> : null}
+      </label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -806,5 +1175,42 @@ function Field({
         className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
       />
     </div>
+  );
+}
+
+function SelectField({
+  label,
+  required,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  required?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+        {label}
+        {required ? <span className="text-brand"> *</span> : null}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 text-sm outline-none transition-colors focus:border-brand/50"
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

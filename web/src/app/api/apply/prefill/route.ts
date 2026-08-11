@@ -135,12 +135,20 @@ FIELDS (id ⇥ type ⇥ label ⇥ options):
 ${fieldsList}
 
 For each field give the best answer:
-- identity/contact (name, email, phone, github, linkedin, location) → from profile/cv.
+- identity/contact (preferred name, pronouns, name, email, phone, github, linkedin, portfolio, current company, current title) → from profile/cv.
+- location → use the shortest truthful form that fits the form, usually city/state, city/country, or country only. Do not paste a full paragraph, full address, or extra notes.
+- location/address-style fields:
+  - street address, address line 2, zip code, city, state, country, address → use the corresponding short profile value if present.
+  - job search location, relocation, work style, remote preference → map from the profile preference and choose the exact option text for selects/radios when possible.
+- work authorization / sponsorship / visa / legal eligibility / demographic / salary / compensation / citizenship / ethnic identity / disability / veteran status / gender identity / pronouns confirmation questions:
+  - never invent.
+  - if the answer is sensitive, unclear, or not explicitly stored, set needs_confirmation:true and value:"".
 - free-text (Why us?, cover-letter, "most impactful thing you've built", etc.) → a concise, honest, concrete answer in the candidate's own voice (no buzzwords, active voice, real metrics only). Keep each under ~120 words.
 - select/radio → choose the best-matching option using the EXACT option text from the list.
 - NEVER fill legal / visa / work-authorization / salary / demographic / sensitive fields → set needs_confirmation:true and value:"".
+- For each answer, also include a short source label: "profile", "cv", "profile+cv", or "confirm".
 
-Output ONLY a compact JSON object mapping each field id → {"value": "...", "needs_confirmation": boolean}. No prose, no markdown, no code fence.`;
+Output ONLY a compact JSON object mapping each field id → {"value": "...", "needs_confirmation": boolean, "source": "profile"|"cv"|"profile+cv"|"confirm"}. No prose, no markdown, no code fence.`;
 
       log(`Form: "${s.title}" · ${s.fields.length} fields · prompt ${prompt.length} chars · memory ${mem.length} chars`);
       log(`Planner: ${cliId} (${binPath})`);

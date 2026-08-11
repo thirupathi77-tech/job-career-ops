@@ -334,7 +334,11 @@ export function AssistantConsole() {
     const ap = applyRef.current;
     if (!pathname.startsWith("/apply") || !ap.fields.length) return "";
     const lines = ap.fields
-      .map((f) => `- ${f.label || f.id}${ap.meta[f.id]?.needsConfirmation ? " (user confirms)" : ""}: ${ap.answers[f.id] ? `"${ap.answers[f.id].slice(0, 240)}"` : "(empty)"}`)
+      .map((f) => {
+        const meta = ap.meta[f.id];
+        const tags = [meta?.source ? `source=${meta.source.replace("profile+cv", "profile+cv")}` : "", meta?.needsConfirmation ? "user confirms" : ""].filter(Boolean);
+        return `- ${f.label || f.id}${tags.length ? ` (${tags.join(", ")})` : ""}: ${ap.answers[f.id] ? `"${ap.answers[f.id].slice(0, 240)}"` : "(empty)"}`;
+      })
       .join("\n");
     return `\n\nAPPLY FORM — the user is filling "${ap.title}". Current answers:\n${lines}\nTo write or revise an answer, emit setApplyField {"field":"<label or id>","value":"<new text>"}. If a change reveals a durable preference or corrected fact, ALSO remember it.`;
   }

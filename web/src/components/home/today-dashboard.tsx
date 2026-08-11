@@ -13,7 +13,7 @@ import { FollowUpCard, type FollowUp } from "@/components/home/follow-up-card";
 import { DecisionCard } from "@/components/home/decision-card";
 import { QuickEvaluate } from "@/components/quick-evaluate";
 
-// The retention "Today": a dual-loop action queue (the maintainer's
+// The retention "Job Queue": a dual-loop action queue (the maintainer's
 // "N new matches this week · M follow-ups due"). SUPPLY loop = fresh free-scan
 // matches (zero tokens, /api/whats-new); DEMAND loop = follow-ups due
 // (/api/followups). Each item one-tap actionable. Home stays a VIEW over the
@@ -96,6 +96,7 @@ export function TodayDashboard({
   const newThisWeek = fresh.length;
   const allClear = !loadingQueues && newThisWeek === 0 && overdue === 0 && awaiting.length === 0;
   const inboxUrls = useMemo(() => new Set(inbox.map((j) => j.url)), [inbox]);
+  const recentInbox = useMemo(() => inbox.slice(0, 6), [inbox]);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 max-sm:pb-24">
@@ -117,7 +118,7 @@ export function TodayDashboard({
         <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] bg-surface/55 backdrop-blur-[2px] dark:bg-background/45" />
         <div className="relative z-10">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-            <span className="text-faint">//</span> today · <span className="tabular-nums">{dateLabel}</span>
+            <span className="text-faint">//</span> job queue · <span className="tabular-nums">{dateLabel}</span>
           </p>
           <h1 className={`${instrumentSerif.className} mt-3 text-4xl leading-[1.05] text-landing md:text-5xl`}>
             {loadingQueues ? (
@@ -188,6 +189,44 @@ export function TodayDashboard({
           {fresh.length > 6 && (
             <Link href="/explore" className="mt-3 inline-flex items-center text-sm text-muted transition hover:text-brand max-sm:min-h-[44px]">
               See all {fresh.length} →
+            </Link>
+          )}
+        </Section>
+      )}
+
+      {recentInbox.length > 0 && (
+        <Section icon={ArrowRight} title="Latest pipeline jobs" hint="Newest queued jobs from your scheduled run">
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {recentInbox.map((job) => (
+              <div key={`${job.company}-${job.role}-${job.url}`} className="rounded-xl border border-border bg-surface/40 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{job.role}</p>
+                    <p className="mt-0.5 text-xs text-muted">{job.company}</p>
+                  </div>
+                  {job.url && /^https?:\/\//i.test(job.url) ? (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 rounded-full border border-border px-3 py-1 text-xs text-muted transition-colors hover:border-brand/40 hover:text-brand"
+                    >
+                      Open
+                    </a>
+                  ) : null}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link href={`/pipeline?tab=INBOX&q=${encodeURIComponent(job.role || job.company)}`} className="text-xs text-brand hover:underline">
+                    Open in pipeline
+                  </Link>
+                  <span className="text-xs text-faint">Queued for review</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {inbox.length > 6 && (
+            <Link href={`/pipeline?tab=INBOX&q=${encodeURIComponent(recentInbox[0]?.role || recentInbox[0]?.company || "")}`} className="mt-3 inline-flex items-center text-sm text-muted transition hover:text-brand max-sm:min-h-[44px]">
+              See all {inbox.length} queued jobs →
             </Link>
           )}
         </Section>

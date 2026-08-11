@@ -16,6 +16,7 @@
     "or:pipeline": "node openrouter-runner.mjs pipeline",
     "or:eval": "node openrouter-runner.mjs evaluate",
     "or:apply": "node openrouter-runner.mjs apply",
+    "morning": "bash automation/daily-morning.sh",
     "verify": "node verify-pipeline.mjs",
     "normalize": "node normalize-statuses.mjs",
     "dedup": "node dedup-tracker.mjs",
