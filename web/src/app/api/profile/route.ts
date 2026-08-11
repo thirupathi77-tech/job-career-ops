@@ -7,6 +7,7 @@ import { atomicWriteWithBackup } from "@/lib/core/safe-write";
 import { expandTargetRoles } from "@/lib/role-expansion";
 import { isObj, resolveActiveProfile, upsertProfile } from "@/lib/profile";
 import { resolveCli } from "@/lib/clis";
+import { runServerPrompt } from "@/lib/model-backend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -217,14 +218,18 @@ export async function PUT(req: Request) {
   const slug = `${profileName}-${roleTitle}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const variantPath = path.join(outDir, `${slug}.md`);
   const prompt = `Create a role-specific ATS-friendly resume variant for the role "${roleTitle}" using the user's real cv.md and active profile. Follow the same truthful, keyword-aligned style as career-ops job matching: keep only real facts, rewrite bullets toward the role, and optimize for ATS keyword coverage. Output ONLY markdown. The profile name is ${profileName}. The candidate is ${candidateName}.`;
-  const child = spawn(resolved.binPath, resolved.spec.id === "claude" ? ["-p", `${prompt}\n\nRead this file: ${cvFile}`, "--output-format", "text", "--permission-mode", "acceptEdits", "--allowedTools", "Read,Glob,Grep", "--disallowedTools", "Write,Edit,Bash,NotebookEdit,Task"] : resolved.spec.args(prompt), { cwd: root, env: process.env });
-  let out = "";
-  let err = "";
-  child.stdout.on("data", (d) => (out += d.toString()));
-  child.stderr.on("data", (d) => (err += d.toString()));
-  const code = await new Promise<number>((resolve) => child.on("close", resolve));
-  if (code !== 0 && !out.trim()) return Response.json({ error: err.trim() || "resume generation failed" }, { status: 500 });
-  const md = out.trim() || `# ${candidateName}\n\n## Role Focus\n${roleTitle}\n`;
+  const serverOut = await runServerPrompt(cliId, prompt, "You rewrite resumes truthfully and concisely for ATS.");
+  let md = serverOut?.trim() || "";
+  if (!md) {
+    const child = spawn(resolved.binPath, resolved.spec.id === "claude" ? ["-p", `${prompt}\n\nRead this file: ${cvFile}`, "--output-format", "text", "--permission-mode", "acceptEdits", "--allowedTools", "Read,Glob,Grep", "--disallowedTools", "Write,Edit,Bash,NotebookEdit,Task"] : resolved.spec.args(prompt), { cwd: root, env: process.env });
+    let out = "";
+    let err = "";
+    child.stdout.on("data", (d) => (out += d.toString()));
+    child.stderr.on("data", (d) => (err += d.toString()));
+    const code = await new Promise<number>((resolve) => child.on("close", resolve));
+    if (code !== 0 && !out.trim()) return Response.json({ error: err.trim() || "resume generation failed" }, { status: 500 });
+    md = out.trim() || `# ${candidateName}\n\n## Role Focus\n${roleTitle}\n`;
+  }
   fs.writeFileSync(variantPath, md, "utf8");
 
   let base: Record<string, unknown> = {};

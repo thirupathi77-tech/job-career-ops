@@ -4,6 +4,7 @@ import path from "node:path";
 import { resolveCli } from "@/lib/clis";
 import { careerOpsRoot, readMemory } from "@/lib/career-ops";
 import { getSession } from "@/lib/apply/session";
+import { runServerPrompt } from "@/lib/model-backend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -143,6 +144,18 @@ Output ONLY a compact JSON object mapping each field id → {"value": "...", "ne
 
       log(`Form: "${s.title}" · ${s.fields.length} fields · prompt ${prompt.length} chars · memory ${mem.length} chars`);
       log(`Planner: ${cliId} (${binPath})`);
+
+      const serverOut = await runServerPrompt(cliId, prompt, "You fill job applications conservatively and truthfully.");
+      if (serverOut != null && serverOut.trim()) {
+        log("Server key path used");
+        const { obj, truncated } = extractJsonObject(serverOut);
+        if (!obj) return fail("server model response was not valid JSON", serverOut.slice(-300));
+        const count = Object.keys(obj).length;
+        log(`Parsed ${count} answers${truncated ? " (RECOVERED from truncated output — some fields may be missing)" : ""}`);
+        emit({ t: "done", answers: obj, truncated, count });
+        controller.close();
+        return;
+      }
 
       const isClaude = cliId === "claude";
       // --strict-mcp-config with no --mcp-config = load ZERO MCP servers → much

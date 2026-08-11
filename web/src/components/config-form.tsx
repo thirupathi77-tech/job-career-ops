@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Check,
-  ChevronDown,
-  KeyRound,
-  TerminalSquare,
-  Terminal,
-  Loader2,
-  CircleDashed,
-  ExternalLink,
-} from "lucide-react";
+import { Check, ChevronDown, KeyRound, TerminalSquare, Terminal, Loader2, CircleDashed, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CadenceSettings } from "@/components/followups/cadence-settings";
+import { Badge } from "@/components/ui/badge";
 import { cliIdFromProvider, PROVIDER_LABELS, resolveProviderCliId, type ProviderId } from "@/lib/provider";
 
 type Cli = {
@@ -40,7 +32,6 @@ export function ConfigForm() {
   const [clis, setClis] = useState<Cli[] | null>(null);
   const [cliId, setCliId] = useState<string>("");
   const [provider, setProvider] = useState<ProviderId>("default");
-  const [apiKey, setApiKey] = useState("");
   const [logos, setLogos] = useState(true);
   const [profiles, setProfiles] = useState<ProfileSummary[]>([{ name: "default", active: true }]);
   const [activeProfile, setActiveProfile] = useState("default");
@@ -66,6 +57,7 @@ export function ConfigForm() {
   const [roleResumes, setRoleResumes] = useState("");
   const [variantRoleTitle, setVariantRoleTitle] = useState("");
   const [variantStatus, setVariantStatus] = useState("");
+  const [keyStatus, setKeyStatus] = useState<{ openai: boolean; anthropic: boolean; fallbackCli: string; envLocalExists: boolean } | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -169,10 +161,24 @@ export function ConfigForm() {
       });
   }, []);
 
+  useEffect(() => {
+    fetch("/api/keys")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || typeof d !== "object") return;
+        setKeyStatus({
+          openai: !!(d as Record<string, unknown>).openai,
+          anthropic: !!(d as Record<string, unknown>).anthropic,
+          fallbackCli: typeof (d as Record<string, unknown>).fallbackCli === "string" ? String((d as Record<string, unknown>).fallbackCli) : "cli",
+          envLocalExists: !!(d as Record<string, unknown>).envLocalExists,
+        });
+      })
+      .catch(() => {
+        setKeyStatus(null);
+      });
+  }, []);
+
   function save() {
-    // The API key is deliberately NOT persisted: nothing reads it yet (the
-    // key/manual panel is unwired) and a secret must never sit in clear-text
-    // localStorage. Keys belong in the user's own CLI/provider config.
     setError("");
     try {
       const installedCliIds = (clis ?? []).filter((c) => c.installed).map((c) => c.id);
@@ -371,6 +377,26 @@ export function ConfigForm() {
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Secret Status</label>
+            <p className="mt-1 text-sm text-muted">Server-side keys stay hidden. CLI remains the fallback when keys are missing.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {keyStatus?.openai ? <Badge tone="good">OpenAI key found</Badge> : <Badge tone="muted">OpenAI key missing</Badge>}
+            {keyStatus?.anthropic ? <Badge tone="good">Claude key found</Badge> : <Badge tone="muted">Claude key missing</Badge>}
+            <Badge tone={keyStatus?.fallbackCli === "server-key" ? "good" : "warn"}>
+              {keyStatus?.fallbackCli === "server-key" ? "Server key active" : "CLI fallback active"}
+            </Badge>
+            {keyStatus?.envLocalExists ? <Badge tone="info">.env.local detected</Badge> : <Badge tone="bad">.env.local not found</Badge>}
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-faint">
+          The web app only reads the presence of keys on the server. It never exposes the secret value in the browser.
+        </p>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Active Profile Data</label>
@@ -513,8 +539,7 @@ export function ConfigForm() {
           onClick={() => setMode("key")}
           icon={KeyRound}
           title="Paste an AI key"
-          hint="Coming soon"
-          disabled
+          hint="Use hidden server keys"
         />
         <ModeCard
           active={mode === "manual"}
@@ -645,20 +670,22 @@ export function ConfigForm() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-                Paste an AI key
+                Server-side key
               </label>
-              <p className="mb-2 text-xs text-faint">Bring a key from OpenAI, Anthropic, and others.</p>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-…"
-                autoComplete="off"
-                className="w-full rounded-xl border border-border bg-surface/60 px-4 py-2.5 font-mono text-sm outline-none transition-colors placeholder:text-faint focus:border-brand/50"
-              />
-              <p className="mt-2 text-xs text-faint">
-                Stored only in this browser — never sent anywhere but your chosen provider.
+              <p className="mb-2 text-xs text-faint">
+                Keep the secret hidden in <code className="rounded bg-surface-hover px-1 py-0.5 font-mono">web/.env.local</code>.
               </p>
+              <div className="rounded-xl border border-dashed border-border bg-surface/30 px-4 py-3 text-sm text-muted">
+                Add one of these, then restart the web app:
+                <div className="mt-2 font-mono text-xs leading-6 text-foreground">
+                  OPENAI_API_KEY=...
+                  <br />
+                  ANTHROPIC_API_KEY=...
+                </div>
+                <p className="mt-2 text-xs text-faint">
+                  The app prefers the hidden server key when present. If not set, it falls back to the installed CLI.
+                </p>
+              </div>
             </div>
           </div>
         )}

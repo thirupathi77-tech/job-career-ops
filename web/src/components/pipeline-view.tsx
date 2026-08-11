@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/company-logo";
 import { canonStatus, formatJobFitScore, scoreNum, scoreTone, statusDot } from "@/lib/format";
 import { InboxTriage } from "@/components/inbox/inbox-triage";
+import { ApplyButton } from "@/components/apply-button";
+import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { cn } from "@/lib/cn";
 // INBOX (the triage queue) is the default tab; the rest filter the tracker.
 const TABS = [
@@ -247,6 +249,7 @@ export function PipelineView({
                   </th>
                 ))}
                 <th className="px-4 py-2.5 font-medium">visa</th>
+                <th className="px-4 py-2.5 font-medium">actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -297,6 +300,25 @@ export function PipelineView({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-faint tabular-nums">{r.date}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {r.jobUrl ? (
+                        <a
+                          href={r.jobUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-brand/40 hover:text-brand max-sm:min-h-[44px]"
+                          title="Open the original job posting"
+                        >
+                          Open JD <ExternalLink className="size-3.5" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-faint">No JD link</span>
+                      )}
+                      <GeneratePdfButton n={r.n} company={r.company} pdfReady={(r.pdf ?? "").includes("✅")} />
+                      <ApplyButton n={r.n} url={r.jobUrl} company={r.company} pdfReady={(r.pdf ?? "").includes("✅")} />
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
