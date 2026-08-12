@@ -18,6 +18,21 @@ function isObj(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v);
 }
 
+export async function GET() {
+  const root = careerOpsRoot();
+  const file = path.join(root, "portals.yml");
+  try {
+    return Response.json({ ok: true, yaml: fs.readFileSync(file, "utf8") });
+  } catch {
+    try {
+      const fallback = fs.readFileSync(path.join(root, "templates", "portals.example.yml"), "utf8");
+      return Response.json({ ok: true, yaml: fallback });
+    } catch {
+      return Response.json({ ok: false, yaml: "" });
+    }
+  }
+}
+
 export async function POST(req: Request) {
   let body: { roles?: string[]; location?: string[] };
   try {
@@ -26,7 +41,6 @@ export async function POST(req: Request) {
     return Response.json({ error: "bad json" }, { status: 400 });
   }
   const roles = expandTargetRoles((Array.isArray(body.roles) ? body.roles : []).map((r) => String(r).trim()).filter(Boolean));
-  if (roles.length === 0) return Response.json({ error: "no roles" }, { status: 400 });
 
   const root = careerOpsRoot();
   const file = path.join(root, "portals.yml");
@@ -44,7 +58,7 @@ export async function POST(req: Request) {
   const tf = isObj(doc.title_filter) ? { ...doc.title_filter } : {};
   tf.positive = roles; // replace ONLY the positive keywords; keep negative/etc.
   doc.title_filter = tf;
-  if (Array.isArray(body.location) && body.location.length) {
+  if (Array.isArray(body.location)) {
     const lf = isObj(doc.location_filter) ? { ...doc.location_filter } : {};
     lf.allow = body.location.map((l) => String(l).trim()).filter(Boolean);
     doc.location_filter = lf;
@@ -56,4 +70,30 @@ export async function POST(req: Request) {
     return Response.json({ error: e instanceof Error ? e.message : "write failed" }, { status: 500 });
   }
   return Response.json({ ok: true, roles: roles.length });
+}
+
+export async function PUT(req: Request) {
+  let body: { yaml?: string };
+  try {
+    body = (await req.json()) as { yaml?: string };
+  } catch {
+    return Response.json({ error: "bad json" }, { status: 400 });
+  }
+  const raw = typeof body.yaml === "string" ? body.yaml : "";
+  if (!raw.trim()) return Response.json({ error: "yaml required" }, { status: 400 });
+
+  try {
+    yaml.load(raw);
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : "invalid yaml" }, { status: 400 });
+  }
+
+  const root = careerOpsRoot();
+  const file = path.join(root, "portals.yml");
+  try {
+    atomicWriteWithBackup(file, raw.endsWith("\n") ? raw : `${raw}\n`);
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : "write failed" }, { status: 500 });
+  }
+  return Response.json({ ok: true });
 }

@@ -19,7 +19,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. The app reads the career-ops checkout it lives in
+Open http://localhost:3001. The app reads the career-ops checkout it lives in
 (the parent directory) — your existing CV, pipeline and reports appear as-is.
 
 ## What works today
@@ -45,7 +45,7 @@ Open http://localhost:3000. The app reads the career-ops checkout it lives in
 ## Development
 
 ```bash
-npm run dev          # dev server (Turbopack)
+npm run dev          # dev server (Turbopack) on port 3001
 npx tsc --noEmit     # typecheck
 npm run build        # production build
 ```

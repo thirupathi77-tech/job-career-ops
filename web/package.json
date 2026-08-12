@@ -4,9 +4,11 @@
   "private": true,
   "description": "VApplyIQ AI local-first job search and career operations experience.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
+    "dev:3001": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
+    "start:3001": "next start -p 3001",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.mjs\" test-stream-parse.mjs test-act-envelope.mjs"
   },

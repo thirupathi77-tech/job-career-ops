@@ -1,0 +1,55 @@
+candidate:
+  full_name: Thiru V
+  email: thiruv.tech@gmail.com
+  phone: ''
+  wechat: ''
+  location: United States
+  linkedin: linkedin.com/in/thiruv-089322160
+  portfolio_url: ''
+  github: ''
+  twitter: ''
+  photo: ''
+  photo_style: rounded
+target_roles:
+  primary:
+    - Data Engineer
+    - analytics engineer
+    - data platform
+    - analytics
+    - etl
+    - bi engineer
+  archetypes:
+    - name: Data Engineering
+      level: Mid-Senior
+      fit: primary
+narrative:
+  headline: Data Engineer
+  exit_story: ''
+  superpowers:
+    - SQL and ETL optimization
+    - Data transformation and pipeline reliability
+    - Spark and Talend job delivery
+  proof_points:
+    - name: Data pipeline optimization
+      url: ''
+      hero_metric: Reduced manual effort by 60% and improved ETL performance by 70%
+compensation:
+  target_range: 118000-135000
+  currency: USD
+  minimum: ''
+  location_flexibility: Open to all
+location:
+  country: United States
+  city: Chicago
+  timezone: America/Chicago
+  visa_status: H1-B
+  authorized_in:
+    - United States
+  needs_sponsorship: true
+language:
+  output: en
+spend_tier: standard
+resumes:
+  default: cv.md
+cv:
+  output_format: html

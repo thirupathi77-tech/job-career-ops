@@ -115,6 +115,9 @@ export function ConfigForm() {
   const [roleResumes, setRoleResumes] = useState("");
   const [variantRoleTitle, setVariantRoleTitle] = useState("");
   const [variantStatus, setVariantStatus] = useState("");
+  const [portalsYaml, setPortalsYaml] = useState("");
+  const [portalsBusy, setPortalsBusy] = useState(false);
+  const [portalsStatus, setPortalsStatus] = useState("");
   const [keyStatus, setKeyStatus] = useState<{ openai: boolean; anthropic: boolean; fallbackCli: string; envLocalExists: boolean } | null>(null);
   const [morningTime, setMorningTime] = useState("07:00");
   const [scheduleType, setScheduleType] = useState<ScheduleType>("daily");
@@ -244,6 +247,19 @@ export function ConfigForm() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/portals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d === "object" && typeof (d as Record<string, unknown>).yaml === "string") {
+          setPortalsYaml(String((d as Record<string, unknown>).yaml));
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, []);
+
+  useEffect(() => {
     fetch("/api/keys")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -295,6 +311,10 @@ export function ConfigForm() {
     setError("");
     setProfileBusy(true);
     try {
+      const roleList = roles
+        .split(/\r?\n|,/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const payload: Record<string, unknown> = {
         profileName: activeProfile,
         name: fullName.trim(),
@@ -315,10 +335,7 @@ export function ConfigForm() {
         workStyle: workStyle.trim(),
         relocation: relocation.trim(),
         jobSearchLocation: jobSearchLocation.trim(),
-        roles: roles
-          .split(/\r?\n|,/)
-          .map((s) => s.trim())
-          .filter(Boolean),
+        roles: roleList,
         currency: currency.trim(),
         remote: remote.trim(),
         country: country.trim(),
@@ -349,6 +366,21 @@ export function ConfigForm() {
       if (!r.ok) {
         const d = (await r.json().catch(() => null)) as { error?: string } | null;
         throw new Error(d?.error ?? `Could not save profile (${r.status}).`);
+      }
+      const portalsRes = await fetch("/api/portals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roles: roleList,
+          location: location
+            .split(/\r?\n|,/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+        }),
+      });
+      if (!portalsRes.ok) {
+        const d = (await portalsRes.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(d?.error ?? `Could not save portals (${portalsRes.status}).`);
       }
       setProfiles((curr) =>
         curr.map((p) => (p.name === activeProfile ? { ...p, active: true } : { ...p, active: false })),
@@ -422,6 +454,32 @@ export function ConfigForm() {
     } catch (e) {
       setVariantStatus("");
       setError(e instanceof Error ? e.message : "Could not generate resume variant.");
+    }
+  }
+
+  async function savePortalsYaml() {
+    setError("");
+    setPortalsBusy(true);
+    setPortalsStatus("");
+    try {
+      const r = await fetch("/api/portals", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ yaml: portalsYaml }),
+      });
+      if (!r.ok) {
+        const d = (await r.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(d?.error ?? `Could not save portals (${r.status}).`);
+      }
+      setPortalsStatus("Portals saved.");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      window.dispatchEvent(new CustomEvent("career-ops:config-change"));
+    } catch (e) {
+      setPortalsStatus("");
+      setError(e instanceof Error ? e.message : "Could not save portals.");
+    } finally {
+      setPortalsBusy(false);
     }
   }
 
@@ -859,6 +917,40 @@ export function ConfigForm() {
           </button>
           <span className="text-xs text-faint">This writes to `config/profile.yml` only for the selected profile.</span>
         </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted">Portals</label>
+            <p className="mt-1 text-sm text-muted">
+              Edit the full <span className="font-mono text-foreground">portals.yml</span> used by the scanner. This is
+              the source of truth for title, location, salary, visa, and company targets.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <textarea
+            value={portalsYaml}
+            onChange={(e) => setPortalsYaml(e.target.value)}
+            rows={22}
+            className="w-full rounded-xl border border-border bg-surface/60 px-4 py-3 font-mono text-xs outline-none transition-colors placeholder:text-faint focus:border-brand/50"
+            placeholder="# Paste portals.yml here"
+          />
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={savePortalsYaml}
+            disabled={portalsBusy}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-2 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200 disabled:cursor-not-allowed disabled:opacity-60 max-sm:min-h-[44px]"
+          >
+            {portalsBusy ? <Loader2 className="size-4 animate-spin" /> : null}
+            Save portals
+          </button>
+          <span className="text-xs text-faint">This writes directly to `portals.yml`.</span>
+        </div>
+        {portalsStatus && <p className="mt-2 text-xs text-emerald-500">{portalsStatus}</p>}
       </section>
 
       {/* Engine mode */}
