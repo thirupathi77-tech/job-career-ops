@@ -1,0 +1,107 @@
+# Portal Scanner Configuration
+# Minimal data-engineering scan set for the current candidate profile.
+
+title_filter:
+  positive:
+    - "Data Engineer"
+    - "Senior Data Engineer"
+    - "Data Lead"
+    - "ETL Developer"
+    - "ETL Engineer"
+    - "Talend Developer"
+    - "AWS Data Engineer"
+    - "Azure Data Engineer"
+
+  negative:
+    - "Principal"
+    - "Director"
+    - "Manager"
+    - "Intern"
+    - "Graduate"
+    - "Staff"
+    - "Lead"
+
+location_filter:
+  always_allow:
+    - "United States"
+  allow:
+    - "Remote"
+    - "United States"
+    - "USA"
+
+country_eligibility_filter:
+  exclusionary:
+    - "must be authorized to work in the united states"
+  inclusive:
+    - "united states"
+
+salary_filter:
+  min: 118000
+  max: 220000
+  currency: USD
+
+visa_filter:
+  enabled: true
+  require_mention: false
+
+max_posting_age_days: 21
+
+content_filter:
+  positive:
+    - "sql"
+    - "spark"
+    - "etl"
+    - "data pipeline"
+    - "data warehouse"
+    - "airflow"
+    - "dbt"
+    - "snowflake"
+    - "databricks"
+    - "aws"
+    - "azure"
+    - "python"
+    - "bigdata"
+
+  negative:
+    - "salesforce administration"
+    - "customer support"
+    - "marketing analytics"
+    - "frontend"
+    - "mobile"
+    - "product manager"
+    - "growth"
+    - "recruiter"
+
+tracked_companies:
+  - name: Airtable
+    careers_url: https://job-boards.greenhouse.io/airtable
+    api: https://boards-api.greenhouse.io/v1/boards/airtable/jobs
+    enabled: true
+
+  - name: Vercel
+    careers_url: https://job-boards.greenhouse.io/vercel
+    api: https://boards-api.greenhouse.io/v1/boards/vercel/jobs
+    enabled: true
+
+  - name: Arize AI
+    careers_url: https://job-boards.greenhouse.io/arizeai
+    api: https://boards-api.greenhouse.io/v1/boards/arizeai/jobs
+    enabled: true
+
+  - name: GetYourGuide
+    careers_url: https://job-boards.greenhouse.io/getyourguide
+    api: https://boards-api.greenhouse.io/v1/boards/getyourguide/jobs
+    enabled: true
+
+  - name: N26
+    careers_url: https://job-boards.greenhouse.io/n26
+    api: https://boards-api.greenhouse.io/v1/boards/n26/jobs
+    enabled: true
+
+  - name: Pleo
+    careers_url: https://jobs.ashbyhq.com/pleo
+    enabled: true
+
+  - name: Vinted
+    careers_url: https://jobs.lever.co/vinted
+    enabled: true
