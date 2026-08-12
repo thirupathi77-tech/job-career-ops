@@ -118,6 +118,7 @@ export function ConfigForm() {
   const [portalsYaml, setPortalsYaml] = useState("");
   const [portalsBusy, setPortalsBusy] = useState(false);
   const [portalsStatus, setPortalsStatus] = useState("");
+  const [lastSavedAt, setLastSavedAt] = useState("");
   const [keyStatus, setKeyStatus] = useState<{ openai: boolean; anthropic: boolean; fallbackCli: string; envLocalExists: boolean } | null>(null);
   const [morningTime, setMorningTime] = useState("07:00");
   const [scheduleType, setScheduleType] = useState<ScheduleType>("daily");
@@ -386,6 +387,7 @@ export function ConfigForm() {
         curr.map((p) => (p.name === activeProfile ? { ...p, active: true } : { ...p, active: false })),
       );
       window.dispatchEvent(new CustomEvent("career-ops:config-change"));
+      setLastSavedAt(new Date().toLocaleString());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
@@ -417,6 +419,7 @@ export function ConfigForm() {
           : [...curr.map((p) => ({ ...p, active: p.name === nextProfile })), { name: nextProfile, active: true }],
       );
       window.dispatchEvent(new CustomEvent("career-ops:config-change"));
+      setLastSavedAt(new Date().toLocaleString());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not activate profile.");
     } finally {
@@ -448,6 +451,7 @@ export function ConfigForm() {
       }
       const d = (await r.json().catch(() => null)) as { file?: string } | null;
       setVariantStatus(d?.file ? `Saved ${d.file}` : "Variant saved");
+      setLastSavedAt(new Date().toLocaleString());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       window.dispatchEvent(new CustomEvent("career-ops:config-change"));
@@ -472,6 +476,7 @@ export function ConfigForm() {
         throw new Error(d?.error ?? `Could not save portals (${r.status}).`);
       }
       setPortalsStatus("Portals saved.");
+      setLastSavedAt(new Date().toLocaleString());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       window.dispatchEvent(new CustomEvent("career-ops:config-change"));
@@ -537,6 +542,7 @@ export function ConfigForm() {
       }
       setMorningTime(d?.time ?? morningTime);
       setMorningStatus(`Daily schedule set to run at ${describeNextRun(d?.time ?? morningTime)}.`);
+      setLastSavedAt(new Date().toLocaleString());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
@@ -611,6 +617,10 @@ export function ConfigForm() {
           </p>
         </div>
       </section>
+
+      <div className="mt-4 text-xs text-faint">
+        Last saved: <span className="text-muted">{lastSavedAt || "not saved yet"}</span>
+      </div>
 
       <section className="mt-6 rounded-2xl border border-border bg-surface/40 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
