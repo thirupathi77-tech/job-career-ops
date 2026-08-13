@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Ban, Clock, MapPin, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { X, Clock, MapPin, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ATS_LABEL, ATS_SOURCES, cleanChips, type AtsSource, type ExploreFilters } from "@/lib/explore";
 
@@ -31,7 +31,7 @@ function KeywordField({
   onChange,
 }: {
   values: string[];
-  tone: "inc" | "exc";
+  tone: "inc";
   placeholder: string;
   onChange: (v: string[]) => void;
 }) {
@@ -48,8 +48,7 @@ function KeywordField({
   return (
     <div className={cn("co-fb__field border border-border bg-surface/40 focus-within:border-brand/40 transition-colors")}>
       {values.map((v) => (
-        <span key={v} className={cn("co-fb__chip", tone === "inc" ? "inc" : "border-border bg-surface-hover text-muted")}>
-          {tone === "exc" && <Ban className="size-3 opacity-70" />}
+        <span key={v} className={cn("co-fb__chip", "inc")}>
           {v}
           <button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}>
             <X className="size-3" />
@@ -126,11 +125,6 @@ export function FilterBuilder({
         )}
       </div>
 
-      <div>
-        <Label>Exclude</Label>
-        <KeywordField values={filters.negative} tone="exc" placeholder="manager, sales, contract…" onChange={(v) => set({ negative: v })} />
-      </div>
-
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
         <div>
           <Label hint="postings published in this window">
@@ -204,10 +198,6 @@ export function FilterBuilder({
             <div>
               <Label>Only in</Label>
               <KeywordField values={filters.allow} tone="inc" placeholder="Remote, EMEA…" onChange={(v) => set({ allow: v })} />
-            </div>
-            <div>
-              <Label>Never in</Label>
-              <KeywordField values={filters.block} tone="exc" placeholder="India…" onChange={(v) => set({ block: v })} />
             </div>
           </div>
           <div>

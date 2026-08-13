@@ -212,7 +212,7 @@ export function ExplorerView({
               body="Discovery is free — loosen and re-cast as often as you want."
               note={scanNote}
               onRerun={() => {
-                setFilters({ ...filters, sinceDays: 30, block: [], allow: [] });
+                setFilters({ ...filters, sinceDays: 30, allow: [] });
                 void discover();
               }}
               rerunLabel="Widen to 30 days · clear location"

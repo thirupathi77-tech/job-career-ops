@@ -69,9 +69,8 @@ function SourceChip({ ats, s }: { ats: AtsSource; s?: SourceState }) {
 }
 
 export function DiscoveringState() {
-  const { filters, sources, matchCount, companiesScanned, status, phase } = useExplore();
+  const { filters, sources, matchCount, status, phase } = useExplore();
   const shown = useCountUp(matchCount);
-  const companies = useCountUp(companiesScanned);
 
   return (
     <>
@@ -81,7 +80,7 @@ export function DiscoveringState() {
 
         <div className="co-ledger">
           <span className="size-1.5 rounded-full bg-emerald-500" />
-          0 tokens · $0.00 {companies > 0 && <span className="opacity-70">· {companies.toLocaleString()} companies</span>}
+          0 tokens · $0.00 {shown > 0 && <span className="opacity-70">· {shown.toLocaleString()} roles fetched</span>}
         </div>
 
         <div>

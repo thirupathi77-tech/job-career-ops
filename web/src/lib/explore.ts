@@ -18,9 +18,7 @@ export const ATS_LABEL: Record<AtsSource, string> = {
  *  to scan-ats-full.mjs's --since / --ats / --limit. */
 export type ExploreFilters = {
   positive: string[];
-  negative: string[];
   allow: string[];
-  block: string[];
   alwaysAllow: string[];
   sinceDays: number;
   ats: AtsSource[];
@@ -29,9 +27,7 @@ export type ExploreFilters = {
 
 export const DEFAULT_FILTERS: ExploreFilters = {
   positive: [],
-  negative: [],
   allow: [],
-  block: [],
   alwaysAllow: [],
   sinceDays: 7,
   ats: [...ATS_SOURCES],
@@ -125,9 +121,7 @@ export function parseExplorePatch(
   const next: ExploreFilters = { ...base, ats: [...base.ats] };
   const lists: [keyof ExploreFilters, string][] = [
     ["positive", "positive"],
-    ["negative", "negative"],
     ["allow", "allow"],
-    ["block", "block"],
     ["alwaysAllow", "alwaysAllow"],
   ];
   for (const [field, key] of lists) {
@@ -147,9 +141,7 @@ export function parseExplorePatch(
 export function filtersToParams(f: ExploreFilters): string {
   const sp = new URLSearchParams();
   if (f.positive.length) sp.set("q", f.positive.join(","));
-  if (f.negative.length) sp.set("not", f.negative.join(","));
   if (f.allow.length) sp.set("loc", f.allow.join(","));
-  if (f.block.length) sp.set("noloc", f.block.join(","));
   if (f.alwaysAllow.length) sp.set("home", f.alwaysAllow.join(","));
   if (f.sinceDays !== DEFAULT_FILTERS.sinceDays) sp.set("since", String(f.sinceDays));
   if (f.ats.length !== ATS_SOURCES.length) sp.set("ats", f.ats.join(","));
@@ -162,9 +154,7 @@ export function paramsToFilters(sp: URLSearchParams, base: ExploreFilters = DEFA
   return parseExplorePatch(
     {
       positive: split(sp.get("q")),
-      negative: split(sp.get("not")),
       allow: split(sp.get("loc")),
-      block: split(sp.get("noloc")),
       alwaysAllow: split(sp.get("home")),
       since: sp.get("since") ?? undefined,
       ats: split(sp.get("ats")),
@@ -190,5 +180,5 @@ export function paramsToAi(sp: URLSearchParams): string | null {
 /** Is the search broad enough that "nothing found" means "you're current"
  *  (good news) rather than "loosen your filters" (actionable)? */
 export function isBroadSearch(f: ExploreFilters): boolean {
-  return f.positive.length <= 1 && f.block.length === 0 && f.allow.length === 0;
+  return f.positive.length <= 1 && f.allow.length === 0;
 }
