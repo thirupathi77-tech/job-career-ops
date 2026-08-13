@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
+const MAX_BACKUPS = 3;
+
 // THE one place every user-layer write goes through. The core's #1 historical
 // pain was data-loss (#649/#704/#920/#958); these guards make a web write
 // crash-safe + non-clobbering by construction:
@@ -32,9 +34,32 @@ export function backup(file: string): string | null {
   }
 }
 
+function pruneBackups(file: string, keep = MAX_BACKUPS): void {
+  const dir = path.dirname(file);
+  const prefix = `${path.basename(file)}.bak-`;
+  try {
+    const backups = fs.readdirSync(dir)
+      .filter((name) => name.startsWith(prefix))
+      .sort()
+      .reverse();
+    for (const name of backups.slice(keep)) fs.unlinkSync(path.join(dir, name));
+  } catch {
+    /* backup cleanup must never prevent the user-layer write */
+  }
+}
+
 /** Atomic write that first backs up any existing content. Returns the backup path. */
 export function atomicWriteWithBackup(file: string, content: string): string | null {
+  try {
+    if (fs.readFileSync(file, "utf8") === content) {
+      pruneBackups(file);
+      return null;
+    }
+  } catch {
+    /* missing file proceeds to the normal atomic write */
+  }
   const bak = backup(file);
   atomicWrite(file, content);
+  pruneBackups(file);
   return bak;
 }

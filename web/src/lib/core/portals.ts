@@ -16,12 +16,11 @@ import { DEFAULT_FILTERS, cleanChips, type ExploreFilters } from "@/lib/explore"
  * We also read the real portals.yml + config/profile.yml (tolerantly) only to
  * SEED sensible defaults for the first search.
  *
- * Filter semantics mirror scan.mjs::buildTitleFilter / buildLocationFilter:
+ * Filter semantics mirror the Explorer's positive-only controls:
  *   title positive → substring match (empty = everything matches)
- *   title negative → substring reject
- *   location always_allow > block > allow (case-insensitive substring)
+ *   location always_allow > allow (case-insensitive substring)
  */
-type FilterLists = Pick<ExploreFilters, "positive" | "negative" | "allow" | "block" | "alwaysAllow">;
+type FilterLists = Pick<ExploreFilters, "positive" | "allow" | "alwaysAllow">;
 
 function listFrom(v: unknown): string[] {
   return cleanChips(v);
@@ -35,16 +34,14 @@ export function serializePortals(f: FilterLists): string {
     items.length ? `  ${key}:\n` + items.map((k) => `    - ${JSON.stringify(k)}`).join("\n") + "\n" : "";
 
   let out = "# Ephemeral Explorer filters — generated per-search, safe to delete.\n";
-  if (f.positive.length || f.negative.length) {
+  if (f.positive.length) {
     out += "title_filter:\n";
     out += block("positive", f.positive);
-    out += block("negative", f.negative);
   }
-  if (f.allow.length || f.block.length || f.alwaysAllow.length) {
+  if (f.allow.length || f.alwaysAllow.length) {
     out += "location_filter:\n";
     out += block("always_allow", f.alwaysAllow);
     out += block("allow", f.allow);
-    out += block("block", f.block);
   }
   return out;
 }
@@ -88,11 +85,9 @@ export function seedExploreFilters(): { filters: ExploreFilters; seededFrom: str
     const tf = (portals.title_filter ?? {}) as Record<string, unknown>;
     const lf = (portals.location_filter ?? {}) as Record<string, unknown>;
     filters.positive = listFrom(tf.positive);
-    filters.negative = listFrom(tf.negative);
     filters.allow = listFrom(lf.allow);
-    filters.block = listFrom(lf.block);
     filters.alwaysAllow = listFrom(lf.always_allow);
-    if (filters.positive.length || filters.allow.length || filters.block.length) seededFrom.push("portals.yml");
+    if (filters.positive.length || filters.allow.length) seededFrom.push("portals.yml");
   }
 
   if (filters.positive.length === 0) {

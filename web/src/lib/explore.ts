@@ -110,7 +110,7 @@ function cleanAts(v: unknown): AtsSource[] {
 }
 
 /** Apply a (possibly partial) action/assistant patch onto a base. The assistant
- *  emits {positive,negative,allow,block,alwaysAllow,since,ats,limit}. With
+ *  emits {positive,allow,alwaysAllow,since,ats,limit}. With
  *  merge=true, list fields are ADDED to the base; otherwise the given fields
  *  REPLACE. Unspecified fields are left as-is. */
 export function parseExplorePatch(

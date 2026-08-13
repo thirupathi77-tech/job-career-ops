@@ -86,6 +86,9 @@ reports/*-RESERVED.md
 
 # Backup files written by normalize-statuses.mjs / dedup-tracker.mjs
 *.bak
+*.bak-*
+*.bkp-*
+*.tmp-*
 
 # OpenRouter runner — generated data (personal, never commit)
 data/model-blacklist.json
