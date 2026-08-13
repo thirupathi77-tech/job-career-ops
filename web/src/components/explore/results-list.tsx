@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Layers3, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { DiscoveredOffer } from "@/lib/explore";
 import { CostBadge } from "@/components/cost/cost-badge";
@@ -12,9 +13,11 @@ export type EnrichedOffer = DiscoveredOffer & { inPipeline: boolean; evaluatedN?
 
 export function ResultsList({ offers }: { offers: EnrichedOffer[] }) {
   const { partial, addToPipeline, added, mode } = useExplore();
+  const router = useRouter();
   const isAi = mode === "ai";
   const [sort, setSort] = useState<"fresh" | "company">("fresh");
   const [q, setQ] = useState("");
+  const [batching, setBatching] = useState(false);
 
   const view = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -27,6 +30,12 @@ export function ResultsList({ offers }: { offers: EnrichedOffer[] }) {
   }, [offers, q, sort]);
 
   const addable = offers.filter((o) => !o.inPipeline && !o.evaluatedN && !added.has(o.url));
+  const sendToBatch = async () => {
+    if (batching) return;
+    setBatching(true);
+    if (addable.length) await addToPipeline(addable);
+    router.push("/jobs?view=pipeline&tab=INBOX");
+  };
 
   return (
     <div className="space-y-4">
@@ -65,13 +74,15 @@ export function ResultsList({ offers }: { offers: EnrichedOffer[] }) {
               </button>
             ))}
           </div>
-          {addable.length > 1 && (
+          {offers.length > 0 && (
             <button
               type="button"
-              onClick={() => addToPipeline(addable)}
+              onClick={() => void sendToBatch()}
+              disabled={batching}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface/40 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
             >
-              <Plus className="size-3.5" /> Add all {addable.length}
+              {batching ? <Loader2 className="size-3.5 animate-spin" /> : <Layers3 className="size-3.5" />}
+              Send search to batch ({offers.length})
             </button>
           )}
         </div>

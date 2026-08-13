@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { careerOpsRoot, rootScript } from "@/lib/career-ops";
 import { writeTempPortals, cleanupTempPortals } from "./portals";
 import { ATS_SOURCES, type DiscoveredOffer, type ExploreFilters, type ScanEvent } from "@/lib/explore";
+import { decodeHtmlEntities } from "@/lib/html-entities.mjs";
 
 export type { DiscoveredOffer, ScanEvent, AtsSource } from "@/lib/explore";
 export { ATS_SOURCES } from "@/lib/explore";
@@ -101,7 +102,10 @@ export function runDiscovery(filters: ExploreFilters, onEvent: (e: ScanEvent) =>
       "--ats",
       ats.join(","),
       "--limit",
-      String(Math.max(1, filters.limitPerAts || 150)),
+      String(Math.max(1, filters.limitPerAts || 300)),
+      // A capped deterministic prefix repeats the same companies forever.
+      // Sampling makes every re-cast cover a different part of the network.
+      "--shuffle",
     ];
     if (useJson) args.push("--json");
 
@@ -259,9 +263,9 @@ export function runDiscovery(filters: ExploreFilters, onEvent: (e: ScanEvent) =>
             seen.add(url);
             const source = o.source || `${currentAts}-full`;
             const offer: DiscoveredOffer = {
-              company: o.company,
-              title: o.title,
-              location: o.location || "",
+              company: decodeHtmlEntities(o.company),
+              title: decodeHtmlEntities(o.title),
+              location: decodeHtmlEntities(o.location || ""),
               postedAt: o.postedAt || "",
               ats: source.replace(/-full$/, ""),
               source,

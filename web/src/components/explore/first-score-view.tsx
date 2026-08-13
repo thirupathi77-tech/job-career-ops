@@ -171,7 +171,7 @@ export function FirstScoreView() {
             <button
               onClick={() => {
                 close();
-                router.push("/pipeline?tab=EVALUATED");
+                router.push("/jobs?view=pipeline&tab=EVALUATED");
               }}
               className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-sm transition hover:brightness-110"
             >
@@ -180,7 +180,7 @@ export function FirstScoreView() {
             <button
               onClick={() => {
                 close();
-                router.push("/explore");
+                router.push("/jobs?view=discover");
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface/50 px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-brand/40 hover:text-brand"
             >

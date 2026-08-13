@@ -13,20 +13,16 @@ import { ApplyButton } from "@/components/apply-button";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { cn } from "@/lib/cn";
 // INBOX (the triage queue) is the default tab; the rest filter the tracker.
-const TABS = [
-  "INBOX",
-  "ALL",
-  "EVALUATED",
+const JOB_TABS = ["INBOX", "EVALUATED"] as const;
+const APPLICATION_TABS = [
   "APPLIED",
   "RESPONDED",
   "INTERVIEW",
   "OFFER",
   "HIRED",
   "REJECTED",
-  "DISCARDED",
-  "SKIP",
 ] as const;
-type Tab = (typeof TABS)[number];
+type Tab = (typeof JOB_TABS)[number] | (typeof APPLICATION_TABS)[number];
 
 const SORT_KEYS = ["company", "role", "score", "status", "date"] as const;
 type SortKey = (typeof SORT_KEYS)[number];
@@ -45,9 +41,11 @@ function sponsorshipBadge(sig?: string) {
 export function PipelineView({
   applications,
   inbox,
+  scope = "jobs",
 }: {
   applications: Application[];
   inbox: InboxJob[];
+  scope?: "jobs" | "applications";
 }) {
   const params = useSearchParams();
   const router = useRouter();
@@ -57,7 +55,9 @@ export function PipelineView({
   // tiles' deep links AND the assistant's filterPipeline/navigate actions drive
   // the table identically (no useState mirror → no desync).
   const pTab = (params.get("tab") ?? "").toUpperCase();
-  const tab: Tab = (TABS as readonly string[]).includes(pTab) ? (pTab as Tab) : "INBOX";
+  const tabs: readonly Tab[] = scope === "applications" ? APPLICATION_TABS : JOB_TABS;
+  const defaultTab: Tab = scope === "applications" ? "APPLIED" : "INBOX";
+  const tab: Tab = (tabs as readonly string[]).includes(pTab) ? (pTab as Tab) : defaultTab;
   const pMin = parseFloat(params.get("min") ?? "");
   const minFilter: number | null = Number.isFinite(pMin) ? (pMin <= 5 ? pMin * 20 : pMin) : null;
   const pSort = params.get("sort") ?? "";
@@ -117,8 +117,7 @@ export function PipelineView({
 
   const filtered = useMemo(() => {
     if (tab === "INBOX") return [];
-    let rows = applications;
-    if (tab !== "ALL") rows = rows.filter((r) => canonStatus(r.status).includes(tab));
+    let rows = applications.filter((r) => canonStatus(r.status).includes(tab));
     if (minFilter != null) {
       rows = rows.filter((r) => {
         const n = scoreNum(r.score);
@@ -143,23 +142,23 @@ export function PipelineView({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 max-sm:pb-24">
-      {discoveryDue && (
+      {scope === "jobs" && discoveryDue && (
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
           <ShieldAlert className="mt-0.5 size-4 shrink-0" />
           <div>
             <p className="font-medium text-foreground">Discovery is due today.</p>
-            <p className="text-muted">Run Explore first so the pipeline is anchored to fresh roles before you sort or apply.</p>
+            <p className="text-muted">Run Discover first so the inbox is anchored to fresh roles before you shortlist.</p>
           </div>
-          <Link href="/explore" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
+          <Link href="/jobs?view=discover" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
             Run discovery
           </Link>
         </div>
       )}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl tracking-tight text-landing">Pipeline</h1>
+          <h1 className="font-display text-2xl tracking-tight text-landing">{scope === "applications" ? "Applications" : "Jobs"}</h1>
           <p className="mt-1 text-sm text-muted">
-            <span className="tabular-nums">{pendingInbox.length}</span> in inbox ·{" "}
+            {scope === "jobs" && <><span className="tabular-nums">{pendingInbox.length}</span> in inbox ·{" "}</>}
             <span className="tabular-nums">{applications.length}</span> tracked
           </p>
         </div>
@@ -180,18 +179,16 @@ export function PipelineView({
 
       {/* tabs */}
       <div className="mt-6 flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const count =
             t === "INBOX"
               ? pendingInbox.length
-              : t === "ALL"
-                ? applications.length
-                : applications.filter((r) => canonStatus(r.status).includes(t)).length;
+              : applications.filter((r) => canonStatus(r.status).includes(t)).length;
           return (
             <button
               key={t}
               type="button"
-              onClick={() => setParams({ tab: t === "INBOX" ? null : t })}
+              onClick={() => setParams({ tab: t === defaultTab ? null : t })}
               aria-pressed={tab === t}
               className={cn(
                 "-mb-px inline-flex items-center justify-center border-b-2 px-3 py-2 text-xs font-medium transition-colors max-sm:min-h-[44px]",
@@ -365,7 +362,7 @@ function InboxEmpty({ count, filtered }: { count: number; filtered: boolean }) {
           <>
             <p className="mx-auto mt-2 max-w-sm text-sm text-muted">Find roles that match your CV — free, no tokens spent.</p>
             <Link
-              href="/explore?run=1"
+              href="/jobs?view=discover&run=1"
               className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-sm transition-all duration-200 hover:bg-brand-200 hover:-translate-y-0.5 hover:shadow-md"
             >
               <Compass className="size-4" /> Run your first free scan <ArrowRight className="size-4" />

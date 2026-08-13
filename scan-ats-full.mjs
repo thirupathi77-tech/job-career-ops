@@ -37,6 +37,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 import { makeHttpCtx, fetchJson } from './providers/_http.mjs';
+import { decodeEntities } from './providers/_html-entities.mjs';
 import { isResolverFailure, dnsPacingStats } from './providers/_dns-cache.mjs';
 import greenhouse from './providers/greenhouse.mjs';
 import lever from './providers/lever.mjs';
@@ -678,7 +679,13 @@ async function main() {
   // pass (workday), and date enrichment (icims). Closure over the filters and
   // counters so both passes update the same run totals.
   const processJobs = async (jobs, sourceName, provider) => {
-    for (const job of jobs) {
+    for (const rawJob of jobs) {
+      const job = {
+        ...rawJob,
+        title: decodeEntities(String(rawJob.title || '')).replace(/\s+/g, ' ').trim(),
+        company: decodeEntities(String(rawJob.company || '')).replace(/\s+/g, ' ').trim(),
+        location: decodeEntities(String(rawJob.location || '')).replace(/\s+/g, ' ').trim(),
+      };
       if (!job.url || !job.title) continue;
       // Confirmed-stale postings are always dropped. Undated postings are
       // dropped by default (a reverse scan targets *fresh* roles) but

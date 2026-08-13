@@ -1,12 +1,5 @@
-import { Suspense } from "react";
-import { FollowupsView } from "@/components/followups/followups-view";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic"; // cadence is computed fresh per request
-
-export default function FollowupsPage() {
-  return (
-    <Suspense>
-      <FollowupsView />
-    </Suspense>
-  );
+export default function FollowupsRedirect() {
+  redirect("/applications?view=followups");
 }

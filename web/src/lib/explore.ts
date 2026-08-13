@@ -31,7 +31,7 @@ export const DEFAULT_FILTERS: ExploreFilters = {
   alwaysAllow: [],
   sinceDays: 7,
   ats: [...ATS_SOURCES],
-  limitPerAts: 150,
+  limitPerAts: 300,
 };
 
 export type DiscoveredOffer = {

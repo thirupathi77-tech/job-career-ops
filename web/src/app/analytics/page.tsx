@@ -55,11 +55,11 @@ export default function Analytics() {
             Analytics will appear after you evaluate and track roles.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            <Link href="/explore" className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-200">
+            <Link href="/jobs?view=discover" className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-200">
               Discover roles
             </Link>
-            <Link href="/pipeline" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-brand/40">
-              Open pipeline
+            <Link href="/jobs?view=pipeline" className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-brand/40">
+              Open jobs
             </Link>
           </div>
         </div>

@@ -8,7 +8,6 @@ import { instrumentSerif } from "@/lib/fonts";
 import { HeroGlow } from "@/components/hero-glow";
 import type { Application, InboxJob } from "@/lib/career-ops";
 import type { DiscoveredOffer } from "@/lib/explore";
-import { DiscoveryCard } from "@/components/explore/discovery-card";
 import { FollowUpCard, type FollowUp } from "@/components/home/follow-up-card";
 import { DecisionCard } from "@/components/home/decision-card";
 import { QuickEvaluate } from "@/components/quick-evaluate";
@@ -95,8 +94,6 @@ export function TodayDashboard({
 
   const newThisWeek = fresh.length;
   const allClear = !loadingQueues && newThisWeek === 0 && overdue === 0 && awaiting.length === 0;
-  const inboxUrls = useMemo(() => new Set(inbox.map((j) => j.url)), [inbox]);
-  const recentInbox = useMemo(() => inbox.slice(0, 6), [inbox]);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 max-sm:pb-24">
@@ -107,7 +104,7 @@ export function TodayDashboard({
             <p className="font-medium text-foreground">Discovery is due today.</p>
             <p className="text-muted">Run a free scan before using the pipeline so you work from the newest matches.</p>
           </div>
-          <Link href="/explore" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
+          <Link href="/jobs?view=discover" className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-brand-soft px-3 py-1.5 text-xs font-medium text-brand-text">
             Run discovery
           </Link>
         </div>
@@ -145,10 +142,10 @@ export function TodayDashboard({
             {loadingQueues ? "Checking new matches and follow-ups…" : discoveryDue ? "Run discovery first, then work the pipeline from fresh matches." : allClear ? "I'll keep scanning the market in the background and surface anything that fits." : "Your action queue for today — discovery and follow-ups, in one place."}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
-            <Link href="/explore" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition hover:bg-brand-200 max-sm:min-h-[44px]">
+            <Link href="/jobs?view=discover" className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition hover:bg-brand-200 max-sm:min-h-[44px]">
               Find new roles <ArrowRight className="size-4" />
             </Link>
-            <Link href="/pipeline" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-brand/40 hover:text-brand max-sm:min-h-[44px]">
+            <Link href="/jobs?view=pipeline" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground transition hover:border-brand/40 hover:text-brand max-sm:min-h-[44px]">
               Open pipeline
             </Link>
           </div>
@@ -178,65 +175,11 @@ export function TodayDashboard({
         </Section>
       )}
 
-      {/* C. Fresh matches this week (supply loop) */}
-      {fresh.length > 0 && (
-        <Section icon={Sparkles} title="Fresh matches this week" hint="Found by your free scans · 0 tokens">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {fresh.slice(0, 6).map((o) => (
-              <DiscoveryCard key={o.url} offer={o} inPipeline={inboxUrls.has(o.url)} />
-            ))}
-          </div>
-          {fresh.length > 6 && (
-            <Link href="/explore" className="mt-3 inline-flex items-center text-sm text-muted transition hover:text-brand max-sm:min-h-[44px]">
-              See all {fresh.length} →
-            </Link>
-          )}
-        </Section>
-      )}
-
-      {recentInbox.length > 0 && (
-        <Section icon={ArrowRight} title="Latest pipeline jobs" hint="Newest queued jobs from your scheduled run">
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {recentInbox.map((job) => (
-              <div key={`${job.company}-${job.role}-${job.url}`} className="rounded-xl border border-border bg-surface/40 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{job.role}</p>
-                    <p className="mt-0.5 text-xs text-muted">{job.company}</p>
-                  </div>
-                  {job.url && /^https?:\/\//i.test(job.url) ? (
-                    <a
-                      href={job.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 rounded-full border border-border px-3 py-1 text-xs text-muted transition-colors hover:border-brand/40 hover:text-brand"
-                    >
-                      Open
-                    </a>
-                  ) : null}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link href={`/pipeline?tab=INBOX&q=${encodeURIComponent(job.role || job.company)}`} className="text-xs text-brand hover:underline">
-                    Open in pipeline
-                  </Link>
-                  <span className="text-xs text-faint">Queued for review</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          {inbox.length > 6 && (
-            <Link href={`/pipeline?tab=INBOX&q=${encodeURIComponent(recentInbox[0]?.role || recentInbox[0]?.company || "")}`} className="mt-3 inline-flex items-center text-sm text-muted transition hover:text-brand max-sm:min-h-[44px]">
-              See all {inbox.length} queued jobs →
-            </Link>
-          )}
-        </Section>
-      )}
-
       {allClear && (
         <div className="mt-8 rounded-2xl border border-border bg-surface/30 px-6 py-10 text-center">
           <Sparkles className="mx-auto size-6 text-brand" />
           <p className="mx-auto mt-3 max-w-md text-sm text-muted">
-            Nothing needs you right now. Run a <Link href="/explore" className="text-brand hover:underline">free scan</Link> to surface this week&apos;s roles, or check your <Link href="/pipeline" className="text-brand hover:underline">pipeline</Link>.
+            Nothing needs you right now. Run a <Link href="/jobs?view=discover" className="text-brand hover:underline">free scan</Link> to surface this week&apos;s roles, or check your <Link href="/jobs?view=pipeline" className="text-brand hover:underline">jobs inbox</Link>.
           </p>
         </div>
       )}

@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { instrumentSerif } from "@/lib/fonts";
 import { ATS_LABEL, type AtsSource, type DiscoveredOffer } from "@/lib/explore";
 import { useJobs } from "@/components/jobs/job-store";
+import { decodeHtmlEntities } from "@/lib/html-entities.mjs";
 import { useExplore } from "./explore-provider";
 
 function freshness(postedAt: string): string {
@@ -70,6 +71,9 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
   const unverified = offer.verification === "unconfirmed";
   const fresh = freshness(offer.postedAt) || offer.postedHint || "";
   const visa = visaBadge(offer);
+  const displayTitle = decodeHtmlEntities(offer.title);
+  const displayCompany = decodeHtmlEntities(offer.company);
+  const displayLocation = decodeHtmlEntities(offer.location);
 
   const evaluate = () => {
     addToPipeline([offer]); // evaluating implies it's in the pipeline — record it
@@ -81,10 +85,10 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
       <div className="flex items-start gap-3">
         <Logo company={offer.company} />
         <a href={offer.url} target="_blank" rel="noopener noreferrer" className="block min-w-0 flex-1 max-sm:min-h-[44px]">
-          <h3 className={`${instrumentSerif.className} truncate text-[17px] leading-tight text-foreground transition-colors group-hover:text-brand`}>{offer.title}</h3>
+          <h3 className={`${instrumentSerif.className} truncate text-[17px] leading-tight text-foreground transition-colors group-hover:text-brand`}>{displayTitle}</h3>
           <p className="mt-0.5 truncate text-[13px] text-muted">
-            {offer.company}
-            {offer.location && <span className="text-faint"> · {offer.location}</span>}
+            {displayCompany}
+            {displayLocation && <span className="text-faint"> · {displayLocation}</span>}
           </p>
         </a>
         <a

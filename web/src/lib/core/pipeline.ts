@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import { careerOpsRoot, rootScript } from "@/lib/career-ops";
+import { decodeHtmlEntities } from "@/lib/html-entities.mjs";
 import type { DiscoveredOffer } from "./scan";
 
 /**
@@ -23,9 +24,9 @@ export function addOffersToPipeline(offers: DiscoveredOffer[]): Promise<AddResul
     .filter((o) => o && typeof o.url === "string" && /^https?:\/\//i.test(o.url))
     .map((o) => ({
       url: o.url,
-      company: o.company || "",
-      title: o.title || "",
-      location: o.location || "",
+      company: decodeHtmlEntities(o.company || ""),
+      title: decodeHtmlEntities(o.title || ""),
+      location: decodeHtmlEntities(o.location || ""),
       source: o.source || o.ats || "explorer",
       // Preserve the optional per-offer signal so it survives to pipeline.md.
       // The core writer treats an empty note as absent (byte-identical output).

@@ -169,6 +169,8 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
     const acc: DiscoveredOffer[] = [];
     let sawError = "";
     let companiesScannedAcc = 0; // 0 at the end = the directories never downloaded → degraded, not empty
+    let runningMatches = 0;
+    const sourceMatchBase = new Map<string, number>();
     let capHitAcc = false; // scan was capped (only a slice of the universe searched)
     let datasetIssueAcc = false; // some ATS dataset was stale/empty/unreachable
     let droppedNoDateAcc = 0; // postings dropped for lacking a publish date
@@ -205,14 +207,25 @@ export function ExploreProvider({ children }: { children: React.ReactNode }) {
             switch (ev.kind) {
               case "atsStart":
                 setPhase("scanning");
+                sourceMatchBase.set(ev.ats, runningMatches);
                 setStatus(`Walking ${ATS_LABEL[ev.ats as AtsSource] ?? ev.ats} — ${ev.companies.toLocaleString()} companies`);
-                setSources((s) => ({ ...s, [ev.ats]: { ...s[ev.ats as AtsSource], state: "active", companies: ev.companies } }));
+                setSources((s) => ({ ...s, [ev.ats]: { ...s[ev.ats as AtsSource], state: "active", companies: ev.companies, matches: 0 } }));
                 break;
               case "progress":
                 // `matches` is the GLOBAL running total (the engine batches the
                 // offer list to the very end), so it drives the live hero counter.
-                setMatchCount((m) => Math.max(m, ev.matches));
-                setSources((s) => ({ ...s, [ev.ats]: { ...s[ev.ats as AtsSource], state: "active", done: ev.scanned, total: ev.total } }));
+                runningMatches = Math.max(runningMatches, ev.matches);
+                setMatchCount(runningMatches);
+                setSources((s) => ({
+                  ...s,
+                  [ev.ats]: {
+                    ...s[ev.ats as AtsSource],
+                    state: "active",
+                    done: ev.scanned,
+                    total: ev.total,
+                    matches: Math.max(0, runningMatches - (sourceMatchBase.get(ev.ats) ?? 0)),
+                  },
+                }));
                 break;
               case "atsDone":
                 setSources((s) => ({ ...s, [ev.ats]: { ...s[ev.ats as AtsSource], state: ev.unreachable > 0 ? "noisy" : "swept", unreachable: ev.unreachable } }));

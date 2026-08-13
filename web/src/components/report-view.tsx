@@ -96,10 +96,10 @@ export function ReportView({
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <Link
-        href="/pipeline"
+        href="/jobs?view=pipeline&tab=EVALUATED"
         className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
       >
-        <ArrowLeft className="size-4" /> Pipeline
+        <ArrowLeft className="size-4" /> Jobs
       </Link>
 
       <header className="mt-5">

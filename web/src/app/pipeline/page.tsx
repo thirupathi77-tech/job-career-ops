@@ -1,14 +1,5 @@
-import { Suspense } from "react";
-import { pipelineSummary } from "@/lib/career-ops";
-import { PipelineView } from "@/components/pipeline-view";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic"; // always read fresh local files
-
-export default function PipelinePage() {
-  const { inbox, applications } = pipelineSummary();
-  return (
-    <Suspense>
-      <PipelineView applications={applications} inbox={inbox} />
-    </Suspense>
-  );
+export default function PipelineRedirect() {
+  redirect("/jobs?view=pipeline");
 }
