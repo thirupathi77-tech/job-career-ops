@@ -220,7 +220,10 @@ export function ConfigForm() {
         setClis(list);
         // auto-select the provider-mapped CLI if available, else the first installed
         const preferred = resolveProviderCliId(provider, list.filter((c) => c.installed).map((c) => c.id));
-        setCliId((prev) => prev || list.find((c) => c.id === preferred && c.installed)?.id || list.find((c) => c.installed)?.id || "");
+        setCliId((prev) => {
+          if (list.some((c) => c.id === prev && c.installed)) return prev;
+          return list.find((c) => c.id === preferred && c.installed)?.id || list.find((c) => c.installed)?.id || "";
+        });
       })
       .catch((e) => {
         setClis([]);

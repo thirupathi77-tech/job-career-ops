@@ -126,16 +126,31 @@ function resolveEndpoint(entry) {
   for (const url of [entry.api, entry.careers_url]) {
     if (typeof url !== 'string' || !url) continue;
     const m = url.match(/^https:\/\/([\w-]+)\.(wd[\w-]*)\.myworkdayjobs\.com\/(?:[a-z]{2}-[A-Z]{2}\/)?([^/?#]+)/);
-    if (!m) continue;
-    const [, tenant, instance, site] = m;
-    const origin = `https://${tenant}.${instance}.myworkdayjobs.com`;
-    return {
-      api: `${origin}/wday/cxs/${tenant}/${site}/jobs`,
-      // externalPath is relative to the site, not the host root — without the
-      // site segment the URL 404s.
-      jobBase: `${origin}/${site}`,
-      origin,
-    };
+    if (m) {
+      const [, tenant, instance, site] = m;
+      const origin = `https://${tenant}.${instance}.myworkdayjobs.com`;
+      return {
+        api: `${origin}/wday/cxs/${tenant}/${site}/jobs`,
+        // externalPath is relative to the site, not the host root — without the
+        // site segment the URL 404s.
+        jobBase: `${origin}/${site}`,
+        origin,
+      };
+    }
+
+    // Newer branded Workday links use a shared shard host and carry the tenant
+    // in the path: /recruiting/{tenant}/{site}. The CXS API stays on that same
+    // origin and uses the path tenant/site coordinates.
+    const siteMatch = url.match(/^https:\/\/(wd[\w-]*)\.myworkdaysite\.com\/recruiting\/([\w-]+)\/([^/?#]+)/);
+    if (siteMatch) {
+      const [, instance, tenant, site] = siteMatch;
+      const origin = `https://${instance}.myworkdaysite.com`;
+      return {
+        api: `${origin}/wday/cxs/${tenant}/${site}/jobs`,
+        jobBase: `${origin}/recruiting/${tenant}/${site}`,
+        origin,
+      };
+    }
   }
   return null;
 }

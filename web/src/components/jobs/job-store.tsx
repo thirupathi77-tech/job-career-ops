@@ -115,11 +115,6 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
       };
       setJobs((js) => [job, ...js]);
 
-      if (!cliId) {
-        patch(id, (j) => ({ ...j, status: "error", endedAt: Date.now(), steps: [...j.steps, { kind: "status", label: "No CLI configured — open Config", ts: Date.now() }] }));
-        return id;
-      }
-
       (async () => {
         let text = "";
         let verdictLine = ""; // latched separately so the 8000-char tail can't drop it

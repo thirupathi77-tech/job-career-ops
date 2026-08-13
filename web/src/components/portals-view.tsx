@@ -11,12 +11,13 @@ type Company = { name: string; status: string; detail: string };
 type Result = { available: boolean; configured: boolean; companies: Company[]; error?: string };
 
 const TONE: Record<string, { dot: string; label: string; chip: string }> = {
-  live: { dot: "bg-emerald-500", label: "live", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
-  empty: { dot: "bg-amber-500", label: "live · empty", chip: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+  direct: { dot: "bg-emerald-500", label: "Direct API", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
+  network: { dot: "bg-sky-500", label: "Network covered", chip: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
+  websearch: { dot: "bg-amber-500", label: "Web search", chip: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+  uncovered: { dot: "bg-zinc-400", label: "Not covered", chip: "bg-surface-hover text-muted" },
   broken: { dot: "bg-red-500", label: "broken", chip: "bg-red-500/15 text-red-700 dark:text-red-400" },
-  skipped: { dot: "bg-zinc-400", label: "no ATS", chip: "bg-surface-hover text-muted" },
 };
-const ORDER: Record<string, number> = { broken: 0, empty: 1, live: 2, skipped: 3 };
+const ORDER: Record<string, number> = { broken: 0, uncovered: 1, websearch: 2, network: 3, direct: 4 };
 
 export function PortalsView() {
   const [res, setRes] = useState<Result | null>(null);
@@ -49,7 +50,10 @@ export function PortalsView() {
 
   const companies = res?.companies ?? [];
   const broken = companies.filter((c) => c.status === "broken");
-  const liveN = companies.filter((c) => c.status === "live" || c.status === "empty").length;
+  const directN = companies.filter((c) => c.status === "direct").length;
+  const networkN = companies.filter((c) => c.status === "network").length;
+  const webN = companies.filter((c) => c.status === "websearch").length;
+  const uncoveredN = companies.filter((c) => c.status === "uncovered").length;
   const sorted = [...companies].sort((a, b) => (ORDER[a.status] ?? 9) - (ORDER[b.status] ?? 9));
 
   return (
@@ -87,7 +91,10 @@ export function PortalsView() {
       {res && res.configured && !res.error && (
         <div className="mt-5">
           <p className="text-sm text-muted">
-            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">{liveN}</span> live ·{" "}
+            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">{directN}</span> direct ·{" "}
+            <span className="tabular-nums text-sky-600 dark:text-sky-300">{networkN}</span> network ·{" "}
+            <span className="tabular-nums text-amber-600 dark:text-amber-400">{webN}</span> web search ·{" "}
+            <span className="tabular-nums">{uncoveredN}</span> not covered ·{" "}
             <span className="tabular-nums text-red-600 dark:text-red-400">{broken.length}</span> broken ·{" "}
             <span className="tabular-nums">{companies.length}</span> tracked
           </p>
@@ -105,7 +112,7 @@ export function PortalsView() {
           )}
           <ul className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface/40">
             {sorted.map((c) => {
-              const t = TONE[c.status] ?? TONE.skipped;
+              const t = TONE[c.status] ?? TONE.uncovered;
               return (
                 <li key={c.name} className="flex items-center gap-3 px-4 py-2.5">
                   <CompanyLogo name={c.name} size={20} />

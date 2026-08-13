@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import yaml from "js-yaml";
 import { careerOpsRoot, rootScript } from "@/lib/career-ops";
 
 export const runtime = "nodejs";
@@ -41,10 +42,41 @@ export async function GET() {
     return Response.json({ available: true, configured: true, companies: [], error: result.error }, { status: 502 });
   }
 
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const configured = new Map<string, Record<string, unknown>>();
+  try {
+    const doc = yaml.load(fs.readFileSync(path.join(root, "portals.yml"), "utf8")) as { tracked_companies?: Record<string, unknown>[] };
+    for (const entry of doc?.tracked_companies ?? []) {
+      if (typeof entry?.name === "string") configured.set(normalize(entry.name), entry);
+    }
+  } catch {
+    /* verification output remains usable without coverage metadata */
+  }
+
+  const networkCompanies = new Set<string>();
+  try {
+    const rows = fs.readFileSync(path.join(root, "data", "scan-history.tsv"), "utf8").split(/\r?\n/).slice(1);
+    for (const row of rows) {
+      const cols = row.split("\t");
+      if (cols[5] === "added" && cols[4]) networkCompanies.add(normalize(cols[4]));
+    }
+  } catch {
+    /* no scan history means no proven network coverage */
+  }
+
   const companies: { name: string; status: string; detail: string }[] = [];
   for (const line of result.output.split("\n")) {
     const m = line.match(/^\s*(✅|🟡|❌|➖)\s+(.+?)\s+—\s+(.*)$/);
-    if (m) companies.push({ name: m[2].trim(), status: STATUS[m[1]] ?? "unknown", detail: m[3].trim() });
+    if (!m) continue;
+    const name = m[2].trim();
+    let status: string = STATUS[m[1]] ?? "unknown";
+    if (status === "live" || status === "empty") status = "direct";
+    if (status === "skipped") {
+      const key = normalize(name);
+      const entry = configured.get(key);
+      status = entry?.scan_method === "websearch" ? "websearch" : networkCompanies.has(key) ? "network" : "uncovered";
+    }
+    companies.push({ name, status, detail: m[3].trim() });
   }
   return Response.json({ available: true, configured: true, companies });
 }

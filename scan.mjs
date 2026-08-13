@@ -24,6 +24,7 @@
  *   node scan.mjs                  # scan all enabled companies
  *   node scan.mjs --dry-run        # preview without writing files
  *   node scan.mjs --company Cohere # scan a single company
+ *   node scan.mjs --dry-run --title-stats 20 # most common fetched titles
  *   node scan.mjs --verify         # Playwright-check each new URL; drop expired postings
  *   node scan.mjs --verify --headed-fallback  # retry anti-bot-blocked URLs in a headed browser (needs a display)
  *   node scan.mjs --verify --throttle          # jittered ~5-10s gap between checks (stay under rate limits)
@@ -149,6 +150,8 @@ export function matchedTitleKeywords(title, titleFilter) {
 //   - `allow` empty → pass (already cleared block)
 //   - `allow` non-empty → must match at least one keyword, OR the TITLE carries
 //     an explicit remote marker (see titleSignalsRemote below)
+//   - `require_match: true` changes the recall-first defaults: missing locations
+//     are rejected and a remote title cannot rescue a non-matching location.
 
 // Normalize a keyword list from portals.yml: tolerates a bare string
 // (wrapped to a 1-item array), null/undefined (→ []), and non-string
@@ -279,12 +282,13 @@ export function buildLocationFilter(locationFilter) {
   const alwaysAllow = compileLocationKeywordList(locationFilter.always_allow);
   const allow = compileLocationKeywordList(locationFilter.allow);
   const block = compileLocationKeywordList(locationFilter.block);
+  const requireMatch = locationFilter.require_match === true;
 
   return (location, url, title) => {
     const lower = typeof location === 'string' ? location.trim().toLowerCase() : '';
     const hint = locationHintFromUrl(url);
-    // Nothing to judge on either field → pass (don't penalize missing data).
-    if (lower === '' && hint === '') return true;
+    // Strict country-only scans must not admit jobs whose location is unknown.
+    if (lower === '' && hint === '') return !requireMatch;
     const matches = (m) => (lower !== '' && m(lower)) || (hint !== '' && m(hint));
     // always_allow still wins over block, and may be satisfied by either field:
     // a genuinely US role whose display string says "United States" is never
@@ -293,6 +297,7 @@ export function buildLocationFilter(locationFilter) {
     if (block.length > 0 && block.some(matches)) return false;
     if (allow.length === 0) return true;
     if (allow.some(matches)) return true;
+    if (requireMatch) return false;
     // Last resort only. Deliberately placed AFTER `block` so a remote title can
     // never rescue a blocked location — "Program Manager - Remote" in Bengaluru
     // stays rejected. This widens `allow`, never `block`.
@@ -1894,6 +1899,10 @@ async function main() {
   const includeBlacklisted = args.includes('--include-blacklisted');
   const companyFlag = args.indexOf('--company');
   const filterCompany = companyFlag !== -1 ? args[companyFlag + 1]?.toLowerCase() : null;
+  const titleStatsFlag = args.indexOf('--title-stats');
+  const titleStatsLimit = titleStatsFlag !== -1
+    ? Math.min(100, Math.max(1, Number.parseInt(args[titleStatsFlag + 1] || '20', 10) || 20))
+    : 0;
   // --posted-after / --posted-before <YYYY-MM-DD>: absolute-date bounds on the
   // employer's real posting date (job.postedAt), gated against a typo since a
   // silently-ignored bound would look like "no jobs matched" instead of an error.
@@ -2042,6 +2051,7 @@ async function main() {
   const cooldownOffers = [];
   let totalFound = 0;
   let totalFilteredTitle = 0;
+  const titleFrequency = new Map();
   let totalFilteredTier = 0;
   let totalFilteredLocation = 0;
   let totalFilteredPostingAge = 0;
@@ -2086,6 +2096,15 @@ async function main() {
       }
 
       for (const job of jobs) {
+        if (titleStatsLimit > 0) {
+          const displayTitle = String(job?.title || '').replace(/\s+/g, ' ').trim();
+          if (displayTitle) {
+            const key = displayTitle.toLowerCase();
+            const current = titleFrequency.get(key);
+            if (current) current.count++;
+            else titleFrequency.set(key, { title: displayTitle, count: 1 });
+          }
+        }
         // Trust enrichment — runs before filters, never drops
         const trustResult = trustValidator(job);
         job.trustScore = trustResult.score;
@@ -2283,6 +2302,15 @@ async function main() {
   console.log(`Total jobs found:      ${totalFound}`);
   if (config.title_filter || totalFilteredTitle > 0) {
     console.log(`Filtered by title:     ${totalFilteredTitle} removed`);
+  }
+  if (titleStatsLimit > 0 && titleFrequency.size > 0) {
+    const topTitles = [...titleFrequency.values()]
+      .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title))
+      .slice(0, titleStatsLimit);
+    console.log(`\nMost common fetched titles (${topTitles.length}):`);
+    for (const [index, item] of topTitles.entries()) {
+      console.log(`  ${index + 1}. ${item.title} — ${item.count}`);
+    }
   }
   if (skipTiers.length > 0) {
     console.log(`Filtered by tier:      ${totalFilteredTier} removed`);

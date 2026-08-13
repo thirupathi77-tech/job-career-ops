@@ -16,7 +16,7 @@ export type CliSpec = {
 
 export const KNOWN: CliSpec[] = [
   { id: "claude", name: "Claude Code", bin: "claude", run: "claude -p", url: "https://claude.ai/code", args: (p) => ["-p", p] },
-  { id: "codex", name: "Codex", bin: "codex", run: "codex exec", url: "https://github.com/openai/codex", args: (p) => ["exec", p] },
+  { id: "codex", name: "Codex", bin: "codex", run: "codex exec", url: "https://github.com/openai/codex", args: (p) => ["exec", "--sandbox", "workspace-write", p] },
   { id: "gemini", name: "Gemini CLI", bin: "gemini", run: "gemini -p", url: "https://github.com/google-gemini/gemini-cli", args: (p) => ["-p", p] },
   { id: "opencode", name: "OpenCode", bin: "opencode", run: "opencode run", url: "https://opencode.ai", args: (p) => ["run", p] },
   { id: "copilot", name: "GitHub Copilot CLI", bin: "copilot", run: "copilot -p", url: "https://docs.github.com/en/copilot/github-copilot-in-the-cli", args: (p) => ["-p", p] },
@@ -35,6 +35,25 @@ function searchDirs(): string[] {
     "/usr/local/bin",
     "/usr/bin",
   ];
+  // The VS Code ChatGPT extension bundles Codex without installing a global
+  // executable. GUI-launched dev servers also omit that extension path from
+  // PATH, so discover its platform bin explicitly.
+  const extensionRoots = [path.join(home, ".vscode/extensions"), path.join(home, ".cursor/extensions")];
+  const extensionArch = process.arch === "arm64" ? "aarch64" : process.arch;
+  const platformDir = process.platform === "darwin"
+    ? `macos-${extensionArch}`
+    : process.platform === "win32"
+      ? `windows-${extensionArch}`
+      : `linux-${extensionArch}`;
+  for (const root of extensionRoots) {
+    try {
+      for (const entry of fs.readdirSync(root)) {
+        if (entry.startsWith("openai.chatgpt-")) extra.push(path.join(root, entry, "bin", platformDir));
+      }
+    } catch {
+      /* editor or extension is not installed */
+    }
+  }
   if (process.platform === "win32") {
     // Windows CLIs frequently install under per-user AppData roots and don't
     // reliably add themselves to PATH (e.g. Antigravity → %LOCALAPPDATA%\agy\bin).

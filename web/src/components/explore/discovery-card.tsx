@@ -61,6 +61,8 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
   );
   const working = job?.status === "running";
   const doneEval = job?.status === "done" && job.kind === "evaluate";
+  const failed = job?.status === "error" && job.kind === "evaluate";
+  const failureLabel = failed ? job.steps[job.steps.length - 1]?.label || "Evaluation failed" : "";
   const statusLabel = WORKER_LABEL[job?.kind ?? ""] ?? "Working…";
 
   const isAdded = added.has(offer.url) || inPipeline || working || doneEval;
@@ -140,6 +142,15 @@ export function DiscoveryCard({ offer, inPipeline, evaluatedN }: { offer: Discov
             {statusLabel}
             <span className="text-brand/60">· in pipeline</span>
           </div>
+        ) : failed ? (
+          <button
+            type="button"
+            onClick={evaluate}
+            title={failureLabel}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/5 px-2.5 py-2 text-xs font-medium text-red-600 hover:bg-red-500/10 dark:text-red-300 max-sm:min-h-[44px]"
+          >
+            {failureLabel} · Retry
+          </button>
         ) : (
           <div className="flex items-center gap-2">
             <button

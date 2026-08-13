@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { resolveCli } from "@/lib/clis";
+import { detectClis, resolveCli } from "@/lib/clis";
 import { careerOpsRoot, readMemory, findReportFile } from "@/lib/career-ops";
 import { resolvePdfPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
 import { renderAndMarkPdf } from "@/lib/pdf-render.mjs";
@@ -55,7 +55,7 @@ End with EXACTLY one final line: VERDICT: {5 if now live, else 1}/5 — {what yo
   // evaluate (default) — run the REAL oferta mode + persist canonically
   return `You are running the OFFICIAL career-ops job evaluation, HEADLESS, on the user's own machine. Today is ${today}. Run the REAL career-ops evaluation — do NOT improvise your own scoring.
 
-1. Read modes/oferta.md and follow it EXACTLY (blocks A–F, G posting-legitimacy, and the Machine Summary). Ground the fit in THIS person: read cv.md, config/profile.yml and modes/_profile.md. Use WebFetch to read the posting (you are headless — Playwright is unavailable, so use WebFetch and mark the report header "Verification: unconfirmed (batch mode)").
+1. Read modes/oferta.md and follow it EXACTLY (blocks A–F, G posting-legitimacy, and the Machine Summary). Ground the fit in THIS person: read cv.md, config/profile.yml, modes/_profile.md, and modes/_custom.md. The custom rules are authoritative for redundant location and visa analysis. Use WebFetch to read the posting (you are headless — Playwright is unavailable, so use WebFetch and mark the report header "Verification: unconfirmed (batch mode)").
 
 2. Persist the result CANONICALLY so the web and the CLI share ONE source of truth:
    a. Reserve a report number: run \`node reserve-report-num.mjs\` — its stdout is a 3-digit number (e.g. 035).
@@ -80,12 +80,21 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: "bad json" }), { status: 400 });
   }
   const { kind = "evaluate", input, cliId } = body;
-  if (!input || !cliId) {
-    return new Response(JSON.stringify({ error: "input and cliId required" }), { status: 400 });
+  if (!input) {
+    return new Response(JSON.stringify({ error: "input required" }), { status: 400 });
   }
-  const resolved = resolveCli(cliId);
+  let effectiveCliId = cliId || "";
+  let resolved = effectiveCliId ? resolveCli(effectiveCliId) : null;
   if (!resolved) {
-    return new Response(JSON.stringify({ error: `CLI '${cliId}' not found` }), {
+    const fallback = detectClis().find((candidate) => candidate.installed);
+    if (fallback) {
+      effectiveCliId = fallback.id;
+      resolved = resolveCli(effectiveCliId);
+    }
+  }
+  if (!resolved) {
+    const requested = cliId ? `CLI '${cliId}' was not found and ` : "";
+    return new Response(JSON.stringify({ error: `${requested}no supported AI CLI is installed` }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
@@ -150,7 +159,7 @@ export async function POST(req: Request) {
 
   const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths });
 
-  const isClaude = cliId === "claude";
+  const isClaude = effectiveCliId === "claude";
   // Tool scope by kind (comma-separated lists; disallowedTools is the hard
   // guardrail). 'evaluate'/'fix-portal' run the REAL mode + persist canonical
   // artifacts → they need Write + Bash (reserve-report-num / merge-tracker /
@@ -235,6 +244,10 @@ export async function POST(req: Request) {
         if (closed) return;
         try { controller.enqueue(enc.encode(JSON.stringify(obj) + "\n")); } catch { closed = true; }
       };
+      if (effectiveCliId !== cliId) {
+        const reason = cliId ? `Configured CLI '${cliId}' is unavailable` : "No CLI was configured";
+        send({ type: "status", label: `${reason}; using ${effectiveCliId}` });
+      }
       const close = () => {
         if (!closed) {
           closed = true;

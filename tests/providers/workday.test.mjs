@@ -39,6 +39,16 @@ try {
     fail(`workday.detect(no-locale) returned ${JSON.stringify(hitNoLocale)}`);
   }
 
+  const hitWorkdaySite = workday.detect({
+    name: 'SS&C',
+    careers_url: 'https://wd1.myworkdaysite.com/recruiting/ssctech/SSCTechnologies',
+  });
+  if (hitWorkdaySite && hitWorkdaySite.url === 'https://wd1.myworkdaysite.com/wday/cxs/ssctech/SSCTechnologies/jobs') {
+    pass('workday.detect() resolves myworkdaysite recruiting URLs');
+  } else {
+    fail(`workday.detect(myworkdaysite) returned ${JSON.stringify(hitWorkdaySite)}`);
+  }
+
   // detect() — null cases
   if (workday.detect({ name: 'X', careers_url: 'https://example.com/careers' }) === null) {
     pass('workday.detect() returns null for non-Workday URL');
